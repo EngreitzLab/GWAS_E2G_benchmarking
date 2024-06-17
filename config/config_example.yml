@@ -1,0 +1,39 @@
+# terminology: E-G predictions are made per BIOSAMPLE and aggregated into TISSUES; each TISSUE is compared with a GWAS TRAIT GROUP comprising multiple TRAITS
+##  CONFIG
+outDir: "results/2024_0607_init_test"
+methodsTable: "config/config_methods_example.tsv"
+methods: [ENCODE_rE2Gext, ABC_full]
+comparisonsTable: "config/config_comparisons_example.tsv" # columns tissue, trait_group 
+
+## REFERENCE / RESOURCES /  PARAMS
+baseDir: "/oak/stanford/groups/engreitz/Users/sheth/GWAS_benchmarking"
+bimDir: "/oak/stanford/groups/engreitz/Users/sheth/GWAS_benchmark_IGVF/V2G/ENCODE_E2G_2023/BIMS_hg38" # background variants
+nBootstrap: 100
+
+# Variant overlap
+FINEMAP_variants: "resources/finemapped_variant_key.tsv" # columns trait, trait_file, trait_group (FINEMAP_Omer or Ulrisch)
+geneScores: # per tissue
+  ALL: "/oak/stanford/groups/engreitz/Users/sheth/GWAS_benchmark_IGVF/V2G/ENCODE_E2G_2023/Gene_Scores/ALL/ALL.txt"
+
+# Gene-linking evalutation
+PoPS_data: "resources/UKBiobank.ABCGene.anyabc.tsv"
+PoPS_traits:
+  ALL: ["ALL"]
+  Blood:  ["Eosino", "Lym", "Mono", "Neutro", "Plt", "RBC", "MCV"]
+numPredGenes: [2, 500]
+numPoPSGenes: [2]
+UKBB_SuSiE_csDir: "/oak/stanford/groups/engreitz/Users/rosaxma/fine_mapped_UKBioBank/liftOver_hg38_GWAS_Traits/191010_UKBB_SUSIE/CredibleSetsFixed/" # files in format dir/trait/variant.list.txt
+UKBB_SuSiE_traits: "/oak/stanford/groups/engreitz/Users/rosaxma/fine_mapped_UKBioBank/liftOver_hg38_GWAS_Traits/191010_UKBB_SUSIE/CredibleSetsFixed/traits.txt" # no header
+
+# Genome annotation
+chrSizes: "resources/genome_annotation/GRCh38_EBV.chrom.sizes.tsv" 
+partition: "resources/genome_annotation/PartitionCombined.bed" 
+TSS: "resources/genome_annotation/CollapsedGeneBounds.hg38.TSS500bp.bed" 
+genes: "resources/genome_annotation/CollapsedGeneBounds.hg38.bed"
+
+
+
+
+
+
+

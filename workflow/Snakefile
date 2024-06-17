@@ -1,0 +1,304 @@
+# coding: utf-8
+
+import pandas as pd
+from os.path import join
+
+conda: "mamba"
+
+# make absolute paths
+config["outDir"] = os.path.join(config["baseDir"], config["outDir"])
+config["codeDir"] = os.path.join(config["baseDir"], "workflow", "scripts")
+config["envDir"] = os.path.join(config["baseDir"], "workflow", "envs")
+
+# load  config files
+methods_config_file = config["methodsTable"]
+methods_config = pd.read_table(methods_config_file, na_values="").fillna("None").set_index("method", drop=False)
+methods_config['threshold'] = [-thresh if inverse else thresh for thresh,inverse in zip(methods_config['threshold'], methods_config['inverse_predictor'])]
+
+comparison_file = config["comparisonsTable"]
+comparison = pd.read_table(comparison_file).dropna()
+comparison = comparison.map(lambda x: x.strip() if type(x)==str else x)
+
+variant_key_file = config["FINEMAP_variants"]
+variant_key = pd.read_table(variant_key_file)
+
+# import util rules
+include: "rules/utils.smk"
+#include: "rules/preprocessing.smk"
+#include: "rules/overlap_variants.smk"
+#include: "rules/visualization.smk"
+
+add_biosamples_and_files_to_config()
+
+# define output files
+#overlap_results = [os.path.join(config["outDir"], method, "tissues", tissue, "trait_overlap_results.tsv") for tissue in comparison['tissue'].unique() for method in config['methods']]
+overlap_plots = [os.path.join(config["outDir"], "plots", "variant_overlap", f"TraitGroup{trait_group}_Tissue{tissue}_comparison.pdf") for trait_group, tissue in zip(comparison['trait_group'], comparison['tissue'])]
+
+#gene_linking_results = [os.path.join(config["outDir"], method, "tissues", "ALL", f"geneLinking.{usePoPS}.numPoPSGenes{numPoPSGenes}.numPredictorGenes{numPredGenes}.tsv") for usePoPS in ["withPoPS", "withoutPoPS"] for method in config["methods"] for numPoPSGenes in config["numPoPSGenes"] for numPredGenes in config["numPredGenes"]]
+gene_linking_plots = [os.path.join(config["outDir"], "plots", "gene_linking",  "ALL.pdf")]
+if "Blood" in comparison['tissue'].values:
+	#gene_linking_blood = [os.path.join(config["outDir"], method, "tissues", "Blood", f"geneLinking.{usePoPS}.numPoPSGenes{numPoPSGenes}.numPredictorGenes{numPredGenes}.tsv") for usePoPS in ["withPoPS", "withoutPoPS"] for method in config["methods"]  for numPoPSGenes in config["numPoPSGenes"] for numPredGenes in config["numPredGenes"]]
+	#gene_linking_results.extend(gene_linking_blood)
+	gene_linking_blood_plot = [os.path.join(config["outDir"], "plots", "gene_linking",  "Blood.pdf")]
+	gene_linking_plots.extend(gene_linking_blood_plot)
+
+
+
+rule all:
+	input:
+		#overlap_plots,
+		#gene_linking_results,
+		gene_linking_plots
+
+## TEMP RULES
+rule process_predictions: # initial processing: read in, sort, adjust score, filter to gene universe
+# sort enhancer predictions by chromosome & start location & filter to gene universe, invert scores if necessary
+# return file with (1-3) loc, (4) biosample, (5) TargetGene, (6) score (no header)
+	input:
+		predFile = lambda wildcards: methods_config.loc[wildcards.method, "predFiles"][wildcards.biosample],
+		geneUniverse = config["genes"]
+	params:
+		codeDir = config["codeDir"],
+		chrSizes = config["chrSizes"],
+		scoreCol = lambda wildcards: methods_config.loc[wildcards.method, "score_col"],
+		inversePred = lambda wildcards: methods_config.loc[wildcards.method, "inverse_predictor"]
+	output:
+		predictionsTemp = temp(os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.temp.tsv")),
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz"),
+	resources:
+		mem_mb = determine_mem_mb
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	shell:
+		"""			
+		# sort predictions file: remove # from header,select columns,remove header, remove rows with blanks
+		if [[ {input.predFile} == *.gz ]]
+		then
+			zcat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {output.predictionsTemp}
+		else
+			cat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {output.predictionsTemp}
+		fi
+
+		# invert score if inverted predictor and filter to gene universe and set biosample column as 5th 
+		Rscript {params.codeDir}/process_predictions.R --input {output.predictionsTemp}  --genes {input.geneUniverse} --biosample {wildcards.biosample} --invert {params.inversePred}  | gzip > {output.predictionsSorted}
+			
+		"""
+# threshold predictions (columns: chr, start, end, biosample, target gene, score)
+rule threshold_predictions: # threshold predictions
+	input:
+		predictionsSorted = os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz")
+	params:
+		threshold = lambda wildcards: methods_config.loc[wildcards.method, "threshold"]
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	output:
+		predictionsThresholded = os.path.join(config["outDir"], "{method}", "biosamples", "{biosample}", "enhancerPredictions.thresholded.bed.gz")
+	shell:
+		"""
+		set +o pipefail;
+		zcat {input.predictionsSorted} | awk '$6>={params.threshold}' | gzip > {output.predictionsThresholded}
+		"""
+
+rule aggregate_predictions_across_tissue: # take thresholded predictions, merge with gene score, rbind -> bedgraph: chr, start, end, score
+	input:
+		predFiles = lambda wildcards: [os.path.join(config["outDir"], wildcards.method, "biosamples", biosample, "enhancerPredictions.thresholded.bed.gz") for biosample in get_biosamples_from_tissue(wildcards.method, wildcards.tissue)]
+	params:
+		geneScore = config["geneScores"]["ALL"] # for now assume using ALL
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	output:
+		predictionsAggregated = temp(os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "enhancerPredictions.temp.bedgraph.gz"))
+	script:
+		os.path.join(config["codeDir"], "aggregate_predictions.R")
+
+rule aggregate_predictions_across_tissue_with_gene: # take thresholded predictions, merge with gene score, rbind -> bedgraph: chr, start, end, score
+	input:
+		predFiles = lambda wildcards: [os.path.join(config["outDir"], wildcards.method, "biosamples", biosample, "enhancerPredictions.thresholded.bed.gz") for biosample in get_biosamples_from_tissue(wildcards.method, wildcards.tissue)]
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	output:
+		predictionsAggregated = (os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "enhancerPredictions_withTargetGene.tsv.gz"))
+	script:
+		os.path.join(config["codeDir"], "aggregate_predictions_with_gene.R")
+
+rule merge_aggregated_predictions:
+	input:
+		predictionsAggregated = os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "enhancerPredictions.temp.bedgraph.gz")
+	params:
+		chrSizes = config["chrSizes"],
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	output:
+		predictionsMerged= os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "enhancerPredictions.bedgraph")
+	shell:
+		"""
+		set +o pipefail;
+		zcat {input.predictionsAggregated} | bedtools sort -i stdin -faidx {params.chrSizes} | bedtools merge -i stdin -c 4 -o max > {output.predictionsMerged}
+		"""
+
+checkpoint define_chromosomes:
+	input:
+		predictionsMerged= os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "enhancerPredictions.bedgraph")
+	output:
+		chromosomesPresent = os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "chrom.txt")
+	shell:
+		"""
+		set +o pipefail;
+		cat {input.predictionsMerged} | cut -f1 | sort | uniq > {output.chromosomesPresent}
+		"""
+
+ # generate variant-level annotations corresponding to merged predictions for 10 million common and low-freq variants (by chromosome)
+rule create_bg_variant_annotations:
+	input:
+		predictionsMerged = os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "enhancerPredictions.bedgraph"),
+	params:
+		bimFile = os.path.join(config["bimDir"], "1000G.EUR.QC.{chrom_num}.bim"),
+		codeDir = config["codeDir"]
+	resources:
+		mem_mb = determine_mem_mb
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	output:
+		predictionsAggregated = os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "bgVariantAnnotations", "chr{chrom_num}.bed.gz")
+	shell:
+		"""
+		python {params.codeDir}/create_bg_variant_annotations.py \
+			--pred_file {input.predictionsMerged} \
+			--bim_file {params.bimFile} \
+			--output_file {output.predictionsAggregated}
+		"""
+
+# function returning list of files from checkpoint
+def get_chrom_files(wildcards, what_to_return):
+	with checkpoints.define_chromosomes.get(method=wildcards.method, tissue=wildcards.tissue).output.chromosomesPresent.open() as file:
+		bim_chr = [f"chr{num}".replace(" ", "") for num in range(1, 23)] # chr1, chr2, ..., chr22
+		chr_all = [line.strip() for line in file]
+		chr_list = [x for x in chr_all if x in bim_chr]
+		if what_to_return=="annotations":
+			file_list = [os.path.join(config["outDir"], wildcards.method, "tissues", wildcards.tissue, "bgVariantAnnotations", f"{chrom}.bed.gz").replace(" ", "") for chrom in chr_list]
+		elif what_to_return=="bg_variants":
+			file_list = [os.path.join(config["bimDir"], f"1000G.EUR.QC.{chrom.replace('chr', '')}.bim") for chrom in chr_list]
+		elif what_to_return=="chromosomes":
+			file_list = chr_list
+
+		return file_list
+
+def get_variant_files(tissue, what_to_return):
+	trait_groups = comparison.loc[(comparison['tissue']==tissue), 'trait_group'].tolist()
+	file_list = []
+	name_list = []
+	if "ALL" in trait_groups:
+		file_list = variant_key['trait_file']
+		name_list = variant_key['trait']
+	else:
+		variant_key_filt = variant_key.dropna()
+		for index, row in variant_key_filt.iterrows():
+			groups_this = [x.strip() for x in row["trait_group"].split(',')] 
+			if any(group in trait_groups for group in groups_this):
+				file_list.append(row["trait_file"])
+				name_list.append(row["trait"])
+	if what_to_return=="files": 
+		return set(file_list)
+	else:
+		return set(name_list)
+
+rule overlap_predictions_with_variants: # for each tissue, overlap with all individual traits it needs
+	input:
+		bgVariantAnnotations = lambda wildcards: get_chrom_files(wildcards, "annotations") # based on chromosomes from checkpoint
+	params:
+		finemappedVarFiles = lambda wildcards: get_variant_files(wildcards.tissue, "files"),
+		finemappedVarTraits = lambda wildcards: get_variant_files(wildcards.tissue, "traits"),
+		nBootstrap = config["nBootstrap"]
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	output:
+		results = os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "trait_overlap_results.tsv")
+	script:
+		os.path.join(config["codeDir"], "overlap_finemapped_variants.R")
+
+rule make_color_palette:
+	params:
+		user_inputs = [methods_config.loc[method, "color"] for method in config["methods"]],
+		names = config["methods"],
+		methods_config = config["methodsTable"]
+	output:
+		colorPalette = os.path.join(config["outDir"], "plots", "colorPalette.tsv"),		
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	script: 
+		os.path.join(config["codeDir"], "color_palette.R")
+
+# make plot per comparison
+def get_traits_per_group(trait_group):
+	if trait_group=="ALL":
+		trait_list = variant_key['trait']
+	else:
+		trait_list=[]
+		variant_key_filt = variant_key.dropna()
+		for index, row in variant_key_filt.iterrows():
+			groups_this = [x.strip() for x in row["trait_group"].split(',')] 
+			if trait_group in groups_this:
+				trait_list.append(row["trait"])
+	return trait_list
+
+rule plot_variant_overlap:
+	input:
+		overlap_results = [os.path.join(config["outDir"], method, "tissues", "{tissue}", "trait_overlap_results.tsv") for method in config["methods"]],
+		color_palette = os.path.join(config["outDir"], "plots", "colorPalette.tsv")
+	params:
+		trait_list = lambda wildcards: get_traits_per_group(wildcards.trait_group)
+	output:
+		out_plot = os.path.join(config["outDir"], "plots", "variant_overlap", "TraitGroup{trait_group}_Tissue{tissue}_comparison.pdf"),
+		out_table = os.path.join(config["outDir"], "plots", "variant_overlap", "TraitGroup{trait_group}_Tissue{tissue}_comparison.tsv")
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	script:
+		os.path.join(config["codeDir"], "plot_trait_overlap.R")
+
+rule run_pops_benchmark:
+	input:
+		predictionsMerged = (os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "enhancerPredictions_withTargetGene.tsv.gz")),
+		benchmarkingData = config["PoPS_data"],
+		bgVariantFiles = lambda wildcards: get_chrom_files(wildcards, "bg_variants"),
+	params:
+		traitsToUse = lambda wildcards: config["PoPS_traits"][wildcards.tissue],
+		bgVariantChroms = lambda wildcards: get_chrom_files(wildcards, "chromosomes"),
+		UKBB_SuSiE_traits = config["UKBB_SuSiE_traits"],
+		UKBB_SuSiE_csDir = config["UKBB_SuSiE_csDir"],
+		nBootstrap = config["nBootstrap"]
+	output: 
+		outputTable = os.path.join(config["outDir"], "{method}", "tissues", "{tissue}", "geneLinking.{usePoPS}.numPoPSGenes{numPoPSGenes}.numPredictorGenes{numPredGenes}.tsv")
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	script:
+		os.path.join(config["codeDir"], "evaluate_gene_linking.R")
+
+rule plot_gene_linking:
+	input:
+		overlap_results = lambda wildcards:  [os.path.join(config["outDir"], method, "tissues", wildcards.trait_group, f"geneLinking.{usePoPS}.numPoPSGenes{numPoPSGenes}.numPredictorGenes{numPredGenes}.tsv") for usePoPS in ["withPoPS", "withoutPoPS"] for method in config["methods"] for numPoPSGenes in config["numPoPSGenes"] for numPredGenes in config["numPredGenes"]],
+		color_palette = os.path.join(config["outDir"], "plots", "colorPalette.tsv")
+	params:
+		trait_list = lambda wildcards: get_traits_per_group(wildcards.trait_group)
+	output:
+		out_plot = os.path.join(config["outDir"], "plots", "gene_linking", "{trait_group}.pdf"),
+		out_table = os.path.join(config["outDir"], "plots", "gene_linking", "{trait_group}.tsv")
+	conda: 
+		os.path.join(config["envDir"], "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	script:
+		os.path.join(config["codeDir"], "plot_gene_linking.R")

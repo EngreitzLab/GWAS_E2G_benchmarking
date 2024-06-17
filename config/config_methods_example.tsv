@@ -1,0 +1,5 @@
+method	sampleKey	geneUniverse	boolean	inverse_predictor	pred_name_long	threshold	score_col	color
+ENCODE_rE2Gext	resources/biosample_keys/ENCODE_rE2Gext.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ENCODE-rE2G_Extended	0.336	ENCODE-rE2G.Score	#9B241C
+ENCODE_rE2G	resources/biosample_keys/ENCODE_rE2G_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ENCODE-rE2G	0.201	Score	#DC6464
+ABC_DNase	resources/biosample_keys/ABC_DNase_common13.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ABC_A=DNase, C=megamap Hi-C	0.201	ABC.Score	#5496CE
+ABC_full	resources/biosample_keys/ABC_full.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ABC_A=DNase x H3K27ac, C=ENCODE Hi-C	0.027	ABC.Score	#00488D
