@@ -1,6 +1,4 @@
-tissue	trait_group
-ALL	GM12878
-ALL	K562
-GM12878	GM12878
-K562	K562
-Blood	Blood
+name	biosamples	traits
+K562	K562	RBC,MCH,MCV,Hb,HbA1c
+GM12878	GM12878	WBC,Mono,Lym,Eosino,AID_Combined,IBD
+Blood	K562,GM12878	Lym,Mono,RBC,Neutro,Plt,MCV,Eosino

@@ -6,27 +6,25 @@ suppressPackageStartupMessages({
 })
 
 main <- function() {
-  ## get files from snakemake
-  user.inputs = (snakemake@params$user_inputs)
-  print(user.inputs)
-  methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
-  outFile = (snakemake@output$colorPalette)
-  methods_config = fread(file=snakemake@params$methods_config, header=TRUE, sep="\t")
-  
-  cp = data.frame(method=methods, hex="")
-  cp = left_join(cp, methods_config, by=c("method"))
-  
-  count = 0;
-  for (i in 1:nrow(cp)){
-    if (user.inputs[i]!="None"){
-      cp$hex[i]=user.inputs[i]
-    } else {
-      count=count+1
-    }
-  }
+	## get files from snakemake
+	methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
+	outFile = (snakemake@output$colorPalette)
+	methods_config = fread(file=snakemake@params$methods_config, header=TRUE, sep="\t")
+
+	cp = data.frame(method=methods, hex="")
+	cp = left_join(cp, methods_config, by=c("method")) # to get pred_name_long
+
+	count = 0;
+
+	cp$hex = ifelse(is.na(cp$color), )
+
+	for (i in 1:nrow(cp)){
+		cp$hex[i] = ifelse(is.na(cp$color[i]), "", cp$color[i])
+	}
+	num_na = sum(is.na(cp$color))
   
   # generate colorspace palette and fill in 
-  cols = qualitative_hcl(n=count, palette="Set 2"); 
+  cols = qualitative_hcl(n=num_na, palette="Set 2"); 
   count=1;
   for (i in 1:nrow(cp)){
     if (cp$hex[i]==""){
