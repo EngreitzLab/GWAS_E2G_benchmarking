@@ -17,21 +17,21 @@ main <- function() {
 	res = dplyr::filter(res, is.finite(enrichment), is.finite(recall), nVariantsTotal>20)
 	res$enhMb = res$bpEnhancers/1e6
 
-	# for clustering, remove traits + biosamples with with no variance
-	enr_by_trait = group_by(res, trait) %>% summarize(sd_enr = sd(enrichment)) %>% dplyr::filter(sd_enr==0)
-	traits_no_var = unique(enr_by_trait$trait)
-	enr_by_bio = group_by(res, biosample) %>% summarize(sd_enr = sd(enrichment)) %>% dplyr::filter(sd_enr==0)
-	biosamples_no_var = unique(enr_by_bio$biosample)
-
-	res_with_var = dplyr::filter(res, !(trait %in% traits_no_var), !(biosample %in% biosamples_no_var))
+	# cluster (both based on enrichment for consistency)
+	M = dplyr::select(res, biosample, trait, enrichment) %>%
+		pivot_wider(names_from=trait, values_from=enrichment) %>% column_to_rownames("biosample")
+	M[is.na(M)] = 0
 	
-	# cluster based on enrichment for consistency (remov
-	M = dplyr::select(res_with_var, biosample, trait, enrichment) %>%
-		pivot_wider(names_from=trait, values_from=enrichment) %>% column_to_rownames("biosample") %>% drop_na()
-	order_traits = hclust(dist(1-cor(M)), method = "ward.D")$order
-	traits_ordered = c(colnames(M)[order_traits], traits_no_var)
-	order_biosamples =  hclust(dist(1-cor(t(M))), method = "ward.D")$order
-	biosamples_ordered = c(rownames(M)[order_biosamples], biosamples_no_var)
+	trait_dist = dist(1-cor(M))
+	trait_dist[is.na(trait_dist)] = 0
+	order_traits = hclust(trait_dist, method = "ward.D2")$order
+	traits_ordered = colnames(M)[order_traits]
+
+	biosample_dist = dist(1-cor(t(M)))
+	biosample_dist[!is.na(biosample_dist)] = 0
+	order_biosamples = hclust(biosample_dist, method="ward.D2")$order
+	biosamples_ordered = rownames(M)[order_biosamples]
+
 	res$trait = factor(res$trait, levels=traits_ordered, ordered=TRUE)
 	res$biosample = factor(res$biosample, levels=biosamples_ordered, ordered=TRUE)
 
@@ -41,7 +41,7 @@ main <- function() {
 	bar_colors = c("#435369", "#96a0b3")
 	na_color = "#ffffff"
 	enr_lims = c(0, max(res$enrichment))
-	recall_limits = c(0, max(res$enrichment))
+	recall_limits = c(0, max(res$recall))
 	ht = ifelse(length(rownames(M))>50, 16, 8) # dependent on number of biosamples
 
 	## plots
@@ -49,16 +49,16 @@ main <- function() {
 	enr_sig = dplyr::filter(res, p_adjust_enr<p_threshold)
 	enr_grid = ggplot(res, aes(x=trait, y=biosample, fill=enrichment)) +
 		geom_tile() +
-		geom_point(data=enr_sig, shape=8, size=0.5) + 
+		geom_point(data=enr_sig, shape=8, size=0.25) + 
 		scale_fill_gradientn(colors=enr_colors, oob=scales::squish, na.value=na_color, limits=enr_lims, name="Enrichment") +
-		theme_minimal() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_blank(),
-			legend.position='top',  legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
+		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_blank(), panel.border = element_blank(),
+			legend.position="top", legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
 
 	# recall heatmap
 	rec_grid = ggplot(res, aes(x=trait, y=biosample, fill=recall)) +
 		geom_tile() +
 		scale_fill_gradientn(colors=recall_colors, oob=scales::squish, na.value=na_color, limits=recall_limits, name="Recall") +
-		theme_minimal() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_blank(),
+		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_blank(),
 			legend.position='top',  legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
 
 	# variants per trait
@@ -66,7 +66,7 @@ main <- function() {
 	var_count = ggplot(n_var, aes(x=trait, y=nVariantsTotal)) +
 		geom_bar(stat="identity", width=0.5, fill=bar_colors[1]) +
 		ylab("# variants per trait") + xlab("") +
-		theme_minimal() + theme(axis.text = element_text(size = 7), axis.text.x = element_text(angle=60, hjust=1))
+		theme_classic() + theme(axis.text = element_text(size = 7), axis.text.x = element_text(angle=60, hjust=1))
 
 	# enhancer size
 	enh_size = dplyr::select(res, biosample, group, enhMb) %>% distinct()
@@ -74,7 +74,7 @@ main <- function() {
 		geom_bar(stat="identity", width=0.5) +
 		ylab("Enhancer set size\n(Mb)") + xlab("") +
 		scale_fill_manual(values=bar_colors) + 
-		theme_minimal() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), axis.text.y = element_blank(), legend.position="None") + 
+		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), axis.text.y = element_blank(), legend.position="None") + 
 		coord_flip()
 	
 	# assemble=
@@ -83,8 +83,8 @@ main <- function() {
 	enr_assembled = egg::ggarrange(enr_grid, enh_mb, var_count, blank, nrow=2, ncol=2, heights=c(2, 0.2), widths=c(2, 0.3))
 	rec_assembled = egg::ggarrange(rec_grid, enh_mb, var_count, blank, nrow=2, ncol=2, heights=c(2, 0.2), widths=c(2, 0.3))
 
-	ggsave(out_enr, enr_assembled, width=8, height=ht)
-	ggsave(out_rec, rec_assembled, width=10, height=ht)
+	ggsave(out_enr, enr_assembled, width=10, height=ht)
+	ggsave(out_recall, rec_assembled, width=10, height=ht)
 }
 
 main()
