@@ -6,20 +6,9 @@ suppressPackageStartupMessages({library(ggplot2)
         library(egg)
 		library(data.table)})
 
-main <- function() {
-	## process data 
-	res_file = snakemake@input$variantOverlap
-	p_threshold = snakemake@params$p_threshold %>% as.numeric()
-	out_enr = snakemake@output$outFile_enrichment
-	out_recall = snakemake@output$outFile_recall
-
-	res = fread(res_file, sep="\t", header=TRUE)
-	res = dplyr::filter(res, is.finite(enrichment), is.finite(recall), nVariantsTotal>20)
-	res$enhMb = res$bpEnhancers/1e6
-
-	# cluster (both based on enrichment for consistency)
-	M = dplyr::select(res, biosample, trait, enrichment) %>%
-		pivot_wider(names_from=trait, values_from=enrichment) %>% column_to_rownames("biosample")
+cluster_traits_biosamples <- function(res){
+	M = dplyr::select(res, biosample, trait, metric) %>%
+	pivot_wider(names_from=trait, values_from=metric) %>% column_to_rownames("biosample")
 	M[is.na(M)] = 0
 	
 	trait_dist = dist(1-cor(M))
@@ -28,63 +17,115 @@ main <- function() {
 	traits_ordered = colnames(M)[order_traits]
 
 	biosample_dist = dist(1-cor(t(M)))
-	biosample_dist[!is.na(biosample_dist)] = 0
+	biosample_dist[is.na(biosample_dist)] = 0
 	order_biosamples = hclust(biosample_dist, method="ward.D2")$order
 	biosamples_ordered = rownames(M)[order_biosamples]
 
 	res$trait = factor(res$trait, levels=traits_ordered, ordered=TRUE)
 	res$biosample = factor(res$biosample, levels=biosamples_ordered, ordered=TRUE)
+	return(res)
+}
+
+plot_heatmap <- function(res, metric, metric_name, colors, max_value, out_file, p_threshold){
+	# subset data
+	res$metric = res[[metric]]
+	
+	# cluster
+	res = cluster_traits_biosamples(res)
 
 	# plotting params
-	enr_colors =  c("#f6eff7","#bdc9e1", "#67a9cf","#1c9099", "#016c59")
-	recall_colors = c("#edf8fb","#b3cde3", "#8c96c6", "#8856a7", "#810f7c")
-	bar_colors = c("#435369", "#96a0b3")
 	na_color = "#ffffff"
-	enr_lims = c(0, max(res$enrichment))
-	recall_limits = c(0, max(res$recall))
-	ht = ifelse(length(rownames(M))>50, 16, 8) # dependent on number of biosamples
+	text_color = "#ffffff"
+	bar_colors = c("#435369", "#96a0b3")
+	metric_lims = c(0, max_value)
 
-	## plots
-	# enrichment heatmap
-	enr_sig = dplyr::filter(res, p_adjust_enr<p_threshold)
-	enr_grid = ggplot(res, aes(x=trait, y=biosample, fill=enrichment)) +
+	ht = ifelse(length(unique(res$biosample))>60, 12, 8) # dependent on number of biosamples
+	
+	# heatmap
+	hm = ggplot(res, aes(x=trait, y=biosample, fill=metric)) +
 		geom_tile() +
-		geom_point(data=enr_sig, shape=8, size=0.25) + 
-		scale_fill_gradientn(colors=enr_colors, oob=scales::squish, na.value=na_color, limits=enr_lims, name="Enrichment") +
+		scale_fill_gradientn(colors=colors, oob=scales::squish, na.value=na_color, limits=metric_lims, name=metric_name) +
 		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_blank(), panel.border = element_blank(),
 			legend.position="top", legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
 
-	# recall heatmap
-	rec_grid = ggplot(res, aes(x=trait, y=biosample, fill=recall)) +
-		geom_tile() +
-		scale_fill_gradientn(colors=recall_colors, oob=scales::squish, na.value=na_color, limits=recall_limits, name="Recall") +
-		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_blank(), axis.text.x = element_blank(),
-			legend.position='top',  legend.direction='horizontal', legend.text=element_text(size=7), legend.title=element_text(size=7))
+	if (metric=="enrichment"){
+		enr_sig = dplyr::filter(res, p_adjust_enr<p_threshold)
+		hm = hm + geom_point(data=enr_sig, shape=8, size=0.25, color=text_color)
+	}
 
+	## margin plots
 	# variants per trait
-	n_var = dplyr::select(res, trait, nVariantsTotal) %>% distinct()
-	var_count = ggplot(n_var, aes(x=trait, y=nVariantsTotal)) +
-		geom_bar(stat="identity", width=0.5, fill=bar_colors[1]) +
-		ylab("# variants per trait") + xlab("") +
-		theme_classic() + theme(axis.text = element_text(size = 7), axis.text.x = element_text(angle=60, hjust=1))
+	n_var = dplyr::select(res, trait, traitGroup, nVariantsTotal) %>% distinct()
+	exc_all = dplyr::filter(n_var, trait!="ALL") 
+	var_max = max(exc_all$nVariantsTotal)
+	n_var$nVariantsTotal = pmin(n_var$nVariantsTotal, var_max)
+	var_count = ggplot(n_var, aes(x=trait, y=log10(nVariantsTotal), fill=traitGroup)) +
+		geom_bar(stat="identity", width=0.5) +
+		ylab("log10(variants per trait)") + xlab("") +
+		scale_fill_manual(values=bar_colors) + 
+		theme_classic() + theme(axis.text = element_text(size = 7), axis.text.x = element_text(angle=60, hjust=1), legend.position="None")
 
 	# enhancer size
-	enh_size = dplyr::select(res, biosample, group, enhMb) %>% distinct()
-	enh_mb = ggplot(enh_size, aes(x=biosample, y=enhMb, fill=group)) +
+	enh_size = dplyr::select(res, biosample, biosampleGroup, enhKb) %>% distinct()
+	enh_max = max(enh_size$enhKb)
+	enh_size$enhKb = pmin(enh_size$enhKb, enh_max)
+	enh_mb = ggplot(enh_size, aes(x=biosample, y=log10(enhKb), fill=biosampleGroup)) +
 		geom_bar(stat="identity", width=0.5) +
-		ylab("Enhancer set size\n(Mb)") + xlab("") +
+		ylab("log10(enhancer\nset size) (kb)") + xlab("") +
 		scale_fill_manual(values=bar_colors) + 
 		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), axis.text.y = element_blank(), legend.position="None") + 
 		coord_flip()
-	
-	# assemble=
+
+	# combine with margin plots
 	blank = ggplot() + theme_void()
+	assembled = egg::ggarrange(hm, enh_mb, var_count, blank, nrow=2, ncol=2, heights=c(2, 0.2), widths=c(2, 0.3))
+	ggsave(out_file, assembled, width=10, height=ht)
+}
 
-	enr_assembled = egg::ggarrange(enr_grid, enh_mb, var_count, blank, nrow=2, ncol=2, heights=c(2, 0.2), widths=c(2, 0.3))
-	rec_assembled = egg::ggarrange(rec_grid, enh_mb, var_count, blank, nrow=2, ncol=2, heights=c(2, 0.2), widths=c(2, 0.3))
 
-	ggsave(out_enr, enr_assembled, width=10, height=ht)
-	ggsave(out_recall, rec_assembled, width=10, height=ht)
+main <- function() {
+	## process data 
+	res_file = snakemake@input$variantOverlap
+	ranges_file = snakemake@input$ranges
+	fixed_scale = snakemake@params$fixedScale
+	p_threshold = snakemake@params$p_threshold %>% as.numeric()
+	out_enr = snakemake@output$outFile_enrichment
+	out_recall = snakemake@output$outFile_recall
+
+	# plotting params
+	enr_ovl_colors =  c("#f1eef6","#bdc9e1", "#74a9cf","#2b8cbe", "#045a8d") # PuBu
+	recall_ovl_colors = c("#edf8fb","#b3cde3", "#8c96c6", "#8856a7", "#810f7c") # BuPu
+	precision_colors = c("#edf8fb","#b2e2e2", "#66c2a4", "#2ca25f", "#006d2c")  # BuGn
+	recall_link_colors = c("#ffffcc","#c2e699", "#78c679", "#31a354", "#006837") # YlGn
+
+	res = fread(res_file, sep="\t", header=TRUE)
+	res = dplyr::filter(res, is.finite(enrichment), is.finite(recall), !is.na(enrichment), !is.na(recall), nVariantsTotal>20)
+	res$enhMb = res$bpEnhancers/1e6
+	res$enhKb = res$bpEnhancers/1e3
+
+	# define max for color scales
+	if (fixed_scale){
+		ranges = fread(ranges_file, sep="\t")
+
+		# get max enr
+		enr = dplyr::filter(ranges, metric=="enrichment_overlap", min_max == "max")
+		max_enr = quantile(enr$value, c(0.75))[1] # use 75th percentile max 
+
+		# get max recall
+		recall = dplyr::filter(ranges, metric=="recall_overlap", min_max == "max")
+		max_recall = max(recall$value)
+
+	} else {
+		res_temp = dplyr::filter(res, nVariantsTotal>25, nCommonVariantsOverlappingEnhancers/nCommonVariantsTotal>0.001)
+		max_enr = max(res_temp$enrichment)
+		max_recall = max(res_temp$recall)
+	}
+
+	## plot enrichment heatmap
+	plot_heatmap(res, "enrichment", "Enrichment", enr_ovl_colors, max_enr, out_enr, p_threshold)
+
+	## plot recall heatmap
+	plot_heatmap(res, "recall", "Recall", recall_ovl_colors, max_recall, out_recall, p_threshold)
 }
 
 main()

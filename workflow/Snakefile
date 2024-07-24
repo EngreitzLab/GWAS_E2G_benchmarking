@@ -19,51 +19,38 @@ methods_config = methods_config.with_columns( # invert threshold if necessary
 	[pl.Series("threshold", [-thresh if inverse else thresh for thresh, inverse in zip(methods_config["threshold"], methods_config["inverse_predictor"])])]
 	) 
 
-## deal with this later (what to plot)
+## for specific groupings + plots, enrichment-recall curves
 comparison_file = config["comparisonsTable"]
-comparisons = pl.read_csv(comparison_file, separator="\t")
-for column in ["biosamples", "traits"]: # convert cols to lists where more than one 
-	comparisons = comparisons.with_columns(
-		pl.col(column).str.replace_all(r"\s*,\s*", ",").str.split(",").alias(column)
-	)
-# separate comparisons into individual biosamples and groups of biosamples; add ALL to group
+comparisons = pl.read_csv(comparison_file, separator="\t") # columns: name	biosample	trait
 
 variant_key_file = config["variantKey"]
 variant_key = pl.read_csv(variant_key_file, separator="\t")
 
 # import rules
 include: "rules/utils.smk"
+validate_biosample_groups()
+validate_trait_groups()
 methods_config = add_biosamples_and_files_to_config(methods_config) # add columns "biosamples" and "predFiles" to methods_config (each with list); also list "biosampleGroups" that are represented
+config["traitGroups"]["ALL"] = variant_key["trait"].to_list()
 print(methods_config)
 
+include: "rules/save_config.smk"
 include: "rules/process_variants.smk"
 include: "rules/process_predictions.smk"
 include: "rules/overlap_variants_predictions.smk"
+include: "rules/link_variants_genes.smk"
 include: "rules/visualization.smk"
 
 # define output files
-overlap_heatmaps = expand(os.path.join(RESULTS_DIR, "plots", "{metric}Heatmaps", "{method}.{metric}Heatmap.withMetrics.pdf"), method=config["methods"], metric=["enrichment", 'recall'])
+configs = expand(os.path.join(RESULTS_DIR, "reference_configs", "{file_name}"), file_name=["config_params.tsv","comparisons.tsv", "methods_config.json"] )
+heatmaps = expand(os.path.join(RESULTS_DIR, "plots", "{metric}Heatmaps", "{method}.{metric}Heatmap.withMetrics.pdf"), method=config["methods"],
+	metric=["enrichmentOverlap", 'recallOverlap', 'recallLinking', 'precisionLinking', 'intPoPS.recallLinking', 'intPoPS.precisionLinking'])
+er_curves = expand(os.path.join(RESULTS_DIR, "plots", "enrichmentRecallCurves", "{comparison_name}.values.tsv.gz"), comparison_name=comparisons["name"].unique().to_list())
+scatterplots = expand(os.path.join(RESULTS_DIR, "plots", "thresholdedPerformanceComparison", "{comparison_name}.scatter.pdf"), comparison_name=comparisons["name"].unique().to_list())
 
 rule all:
 	input:
-		overlap_heatmaps
-
-
-## OUTLINE? 
-# do all processing of variants -> distal noncoding with disease etc. into single file across traits
-# do all processing of predictions -> sort distal noncoding and threshold
-
-## VARIANT OVERLAP ROUND 1: calculate enrichment + recall at every trait/biosample intersection (get significance)
-	# intersect bg variants with each [thresholded] biosample - done
-	# intersect combined GWAS variants with each [thresholded] biosample
-	# calculate enrichment and recall and significance
-	# plot heatmaps
-## VARIANT OVERLAP ROUND 2: find subset of significantly-enriched traits/biosamples
-	# plot enrichment + recall scatterplots across methods for these pairs
-	# (later) for each trait that has >1 sig enr biosample, merge biosamples and compute new enrichment for that biosample group with traits; plot
-	# (later) compute enrichment/recall curves for these pairs OR do this with merged?  will need to start fresh from unthresholded predictions but deal with that later
-## GENE LINKING: calculate precision + recall at linking variant to casual gene
-	# do this for ALL biosamples by ALL traits -> single value per method and plot
-	# calculate numbers for each trait by each bisoample+group, deal with plotting later
-	# do this for significantly-enriched biosample/trait pairs
-	# do this for predefined biosamples with sets of traits
+		configs,
+		heatmaps,
+		er_curves,
+		scatterplots

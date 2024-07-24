@@ -1,3 +1,0 @@
-method	sampleKey	geneUniverse	boolean	inverse_predictor	pred_name_long	threshold	score_col	color
-ENCODE_rE2Gext	resources/test_biosample_keys/ENCODE_rE2Gext.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ENCODE-rE2G_Extended	0.336	ENCODE-rE2G.Score	#9B241C
-ABC_full	resources/test_biosample_keys/ABC_full.tsv	resources/genome_annotation/CollapsedGeneBounds.hg38.bed	FALSE	FALSE	ABC_A=DNase x H3K27ac, C=ENCODE Hi-C	0.027	ABC.Score	#00488D

@@ -41,7 +41,7 @@ rule background_variant_count:
 		"""
 
 # filter variant list to distal noncoding + by PIP and sort
-# resultant columns:  chr,start,end,rsid,pip,CredibleSet,trait (with header; CredibleSet = "chr1:1000-2000")
+# resultant columns:  chr,start,end,rsid,CredibleSet,trait (with header; CredibleSet = "chr1:1000-2000")
 rule filter_GWAS_variants:
 	input: 
 		variants = lambda wildcards: get_col2_from_col1(variant_key, "trait", wildcards.trait, "variant_file"),
@@ -54,25 +54,62 @@ rule filter_GWAS_variants:
 	resources:
 		mem_mb = determine_mem_mb
 	output:
-		variantsFiltered = temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "{trait}.variantList.tsv"))
+		variantsFiltered = os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "{trait}.variantList.tsv")
 	shell:
 		"""
 		set +o pipefail;
 		# header
-		echo -e "chr\tstart\tend\trsid\tpip\tCredibleSet\ttrait" > {output.variantsFiltered}
+		echo -e "chr\tstart\tend\trsid\tCredibleSet\ttrait" > {output.variantsFiltered}
 
 		# rest of file
-		cat {input.variants} | csvtk cut -t -f chr,start,end,rsid,pip,CredibleSet,Disease | sed 1d | awk '$5>{params.thresholdPIP}'  | \
+		cat {input.variants} | csvtk cut -t -f chr,start,end,rsid,pip,CredibleSet,Disease | sed 1d | awk '$5>{params.thresholdPIP}'  | cut -f1,2,3,4,6,7 | \
 			bedtools sort -i stdin -faidx {params.chrSizes} | bedtools intersect -wa -sorted -a stdin -b {input.partitionDistalNoncoding} -g {params.chrSizes} >> {output.variantsFiltered}
 		"""
 
+# merge & deduplicate variant lists for trait groups
+rule merge_GWAS_variants_trait_group:
+	input: 
+		variantFiles = lambda wildcards: expand((os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "{trait}.variantList.tsv")), trait=config["traitGroups"][wildcards.traitGroup])
+	params:
+		chrSizes = config["chrSizes"],
+	conda:
+		os.path.join(ENV_DIR, "GWAS_env.yml")
+	resources:
+		mem_mb = determine_mem_mb
+	output:
+		variantsTraitGroupConcat =temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "traitGroups", "{traitGroup}.variantList.concat.tsv")),
+		variantsTraitGroup = os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "traitGroups", "{traitGroup}.variantList.tsv")
+	shell:
+		"""
+		set +o pipefail;
+		# header
+		echo -e "chr\tstart\tend\trsid\tCredibleSet\ttrait" >> {output.variantsTraitGroup}
+
+		# make array of files
+		IFS=' ' read -r -a variantFileArray <<< "{input.variantFiles}"
+
+		# loop over the variant files and concat 
+		for i in "${{!variantFileArray[@]}}"
+		do
+			varFile=${{variantFileArray[$i]}}
+			# remove header and trait column, add to concat list
+			cat $varFile | sed 1d | cut -f1-5 >> {output.variantsTraitGroupConcat}
+		done
+
+		# sort/dedup and add trait column, add to final file
+		wc -l {output.variantsTraitGroupConcat}
+		cat {output.variantsTraitGroupConcat} | sort | uniq | sed 's/$/\t{wildcards.traitGroup}/' >> {output.variantsTraitGroup}
+		wc -l {output.variantsTraitGroup}
+		"""
+	
+
 # concatenate all (filtered) variants into a single file and sort
-# resultant columns:  chr,start,end,rsid,pip,CredibleSet,trait (with header; CredibleSet = "chr1:1000-2000")
+# resultant columns:  chr,start,end,rsid,CredibleSet,trait (with header; CredibleSet = "chr1:1000-2000")
 rule combine_GWAS_variants:
 	input:
-		allVariants = expand(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "{trait}.variantList.tsv"), trait=variant_key["trait"])
+		allTraits = expand(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "{trait}.variantList.tsv"), trait=variant_key["trait"]),
+		allTraitGroups = expand(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "traitGroups", "{traitGroup}.variantList.tsv"), traitGroup=[*config["traitGroups"]])
 	params:
-		variantDir = os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants"),
 		chrSizes = config["chrSizes"],
 	conda:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
@@ -82,18 +119,32 @@ rule combine_GWAS_variants:
 		header = temp(os.path.join(SCRATCH_DIR, "variants", "header.tsv")),
 		variantsMerged = temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.tsv")),
 		variantsMergedSorted = temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv")),
-		variantsMergedSortedGz = temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"))
+		variantsMergedSortedGz = (os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"))
 	shell:
 		"""
 		set +o pipefail;
 
-		directory={params.variantDir}
-		first_file=$(find "$directory" -type f | head -n 1)
-		head -n 1 "$first_file" > {output.header}
+		# header
+		echo -e "chr\tstart\tend\trsid\tCredibleSet\ttrait" > {output.header}
 
-		# loop through all files in the directory
-		for file in "$directory"/*; do
-			tail -n +2 "$file" >> {output.variantsMerged}
+		# arrays of files
+		IFS=' ' read -r -a traitFileArray <<< "{input.allTraits}"
+		IFS=' ' read -r -a traitGroupFileArray <<< "{input.allTraitGroups}"
+
+		# loop over trait files and concat 
+		for i in "${{!traitFileArray[@]}}"
+		do
+			traitFile=${{traitFileArray[$i]}}
+			# remove header, add to concat list
+			cat $traitFile | sed 1d >> {output.variantsMerged}
+		done
+		
+		# add trait groups
+		for i in "${{!traitGroupFileArray[@]}}"
+		do
+			traitGroupFile=${{traitGroupFileArray[$i]}}
+			# remove header, add to concat list
+			cat $traitGroupFile | sed 1d >> {output.variantsMerged}
 		done
 
 		# sort variants

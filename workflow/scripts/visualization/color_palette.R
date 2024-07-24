@@ -9,17 +9,15 @@ main <- function() {
 	## get files from snakemake
 	methods = (snakemake@params$names) %>% strsplit(" ") %>% unlist
 	outFile = (snakemake@output$colorPalette)
-	methods_config = fread(file=snakemake@params$methods_config, header=TRUE, sep="\t")
+	methods_config = fread(file=snakemake@params$methods_config, header=TRUE, sep="\t") %>%
+		dplyr::select(method, pred_name_long, color)
 
-	cp = data.frame(method=methods, hex="")
+	cp = data.frame(method=methods)
 	cp = left_join(cp, methods_config, by=c("method")) # to get pred_name_long
-
-	count = 0;
-
-	cp$hex = ifelse(is.na(cp$color), )
+	cp$hex = "#000000"
 
 	for (i in 1:nrow(cp)){
-		cp$hex[i] = ifelse(is.na(cp$color[i]), "", cp$color[i])
+		cp$hex[i] = ifelse(is.na(cp$color[i]), NA, cp$color[i])
 	}
 	num_na = sum(is.na(cp$color))
   
@@ -27,20 +25,19 @@ main <- function() {
   cols = qualitative_hcl(n=num_na, palette="Set 2"); 
   count=1;
   for (i in 1:nrow(cp)){
-    if (cp$hex[i]==""){
+    if (is.na(cp$hex[i])){
       cp$hex[i] = cols[count]
       count=count+1
     }
   }
-  
-  # add standards
-  #standards = data.frame(method=c("TSS within 100 kb", "Closest TSS", "Closest gene body", "Proximity"),
-  #                       hex = c("#7A7A7A", "#A8A8A8", "#CDCDCD", "#E2E2E2"))
-  #cp = rbind(cp, standards)
-  
-  #cpListPlotting = split(f=cp$pred_name_long, x=cp$hex)
+
+  # add baselines
+  baselines = data.frame(method=c("PoPS", "distanceToTSS"),
+                         				hex = c("#1c2a43", "#c5cad7"), # dark and light grey
+										pred_name_long = c("Polygenic priority score (PoPS)", "Distance to TSS"))   
 
   cp = dplyr::select(cp, method, pred_name_long, hex)
+  cp = rbind(cp, baselines)
   
   # write table
   write.table(cp, outFile, quote=FALSE, col.names=TRUE, row.names=FALSE, sep="\t")

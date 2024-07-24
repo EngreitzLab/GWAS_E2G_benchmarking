@@ -57,9 +57,11 @@ rule threshold_predictions:
 		"""
 
 # concatenate thresholded predictions for a biosample group (no header, columns: chr,start,end,biosample,TargetGene,score)
-rule concatenate_predictions: 
+rule concatenate_thresholded_predictions: 
 	input:
-		predictionsThresholded = lambda wildcards: expand(os.path.join(SCRATCH_DIR, wildcards.method, "biosamples", "{biosample}", "enhancerPredictions.thresholded.bed.gz"), biosample=get_biosamples_for_group(wildcards.method, wildcards.biosampleGroup))
+		predictionsThresholded = lambda wildcards: expand(os.path.join(SCRATCH_DIR, wildcards.method, "biosamples", "{biosample}", "enhancerPredictions.thresholded.bed.gz"), biosample=get_single_biosamples(wildcards.method, wildcards.biosampleGroup))
+	params:
+		chrSizes = config["chrSizes"]
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	resources:
@@ -81,11 +83,11 @@ rule concatenate_predictions:
 				zcat $pred >> {output.predictionsConcat}
 			done
 
-			cat {output.predictionsConcat} | gzip > {output.predictionsConcatGz}
+			cat {output.predictionsConcat} | bedtools sort -i stdin -faidx {params.chrSizes} | gzip > {output.predictionsConcatGz}
 			"""
 
 # merge regions for biosample group (columns: chr,start,end with no header)
-rule merge_predictions:
+rule merge_thresholded_predictions:
 	input:
 		predictionsConcat = os.path.join(SCRATCH_DIR, "{method}", "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.thresholded.concat.bed.gz")
 	params:
@@ -101,5 +103,25 @@ rule merge_predictions:
 		set +o pipefail;
 
 		zcat {input.predictionsConcat} | cut -f 1-3 | bedtools sort -i stdin -faidx {params.chrSizes} | bedtools merge -i stdin | gzip > {output.predictionsMerged}
-
 		"""
+
+# generate threshold span based on quantiles of interescting predictions (per method)
+rule generate_quantile_threshold_span:
+	input:
+		varInt = lambda wildcards: [os.path.join(SCRATCH_DIR, wildcards.method, "biosamples", biosample, "enhancerPredictions.variantIntersection.tsv.gz") for biosample in get_comparison_biosamples_per_method(comparisons, wildcards.method)[0]]
+	params:
+		nSteps = config["nThresholdSteps"],
+		comparisonsTable = config["comparisonsTable"],
+		threshold = lambda wildcards: get_col2_from_col1(methods_config, "method", wildcards.method, "threshold"),
+		biosamples = lambda wildcards: get_comparison_biosamples_per_method(comparisons, wildcards.method)[1],
+		traits = lambda wildcards: get_comparison_biosamples_per_method(comparisons, wildcards.method)[2],
+		boolean = lambda wildcards: get_col2_from_col1(methods_config, "method", wildcards.method, "boolean")
+	output:
+		thresholdSpan = os.path.join(RESULTS_DIR, "{method}", "thresholdSpan.tsv")
+	resources:
+		mem_mb = determine_mem_mb
+	conda:
+		os.path.join(ENV_DIR, "GWAS_env.yml")
+	script:
+		os.path.join(SCRIPTS_DIR, "preprocessing", "generate_quantile_threshold_span.R")
+		
