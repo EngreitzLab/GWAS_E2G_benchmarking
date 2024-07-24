@@ -1,0 +1,56 @@
+# coding: utf-8
+
+import pandas as pd
+import polars as pl
+from os.path import join
+
+conda: "mamba"
+
+# make absolute paths
+RESULTS_DIR = os.path.join(config["baseDir"], config["results"])
+SCRIPTS_DIR = os.path.join(config["baseDir"], "workflow", "scripts")
+ENV_DIR = os.path.join(config["baseDir"], "workflow", "envs")
+SCRATCH_DIR = os.path.join(config["scratchDir"], "GWAS_E2G_benchmarking", config["results"])
+
+# read config files
+methods_config_file = config["methodsTable"]
+methods_config = pl.read_csv(methods_config_file, separator="\t", null_values=[""]).fill_null("None")
+methods_config = methods_config.with_columns( # invert threshold if necessary
+	[pl.Series("threshold", [-thresh if inverse else thresh for thresh, inverse in zip(methods_config["threshold"], methods_config["inverse_predictor"])])]
+	) 
+
+## for specific groupings + plots, enrichment-recall curves
+comparison_file = config["comparisonsTable"]
+comparisons = pl.read_csv(comparison_file, separator="\t") # columns: name	biosample	trait
+
+variant_key_file = config["variantKey"]
+variant_key = pl.read_csv(variant_key_file, separator="\t")
+
+# import rules
+include: "rules/utils.smk"
+validate_biosample_groups()
+validate_trait_groups()
+methods_config = add_biosamples_and_files_to_config(methods_config) # add columns "biosamples" and "predFiles" to methods_config (each with list); also list "biosampleGroups" that are represented
+config["traitGroups"]["ALL"] = variant_key["trait"].to_list()
+print(methods_config)
+
+include: "rules/save_config.smk"
+include: "rules/process_variants.smk"
+include: "rules/process_predictions.smk"
+include: "rules/overlap_variants_predictions.smk"
+include: "rules/link_variants_genes.smk"
+include: "rules/visualization.smk"
+
+# define output files
+configs = expand(os.path.join(RESULTS_DIR, "reference_configs", "{file_name}"), file_name=["config_params.tsv","comparisons.tsv", "methods_config.json"] )
+heatmaps = expand(os.path.join(RESULTS_DIR, "plots", "{metric}Heatmaps", "{method}.{metric}Heatmap.withMetrics.pdf"), method=config["methods"],
+	metric=["enrichmentOverlap", 'recallOverlap', 'recallLinking', 'precisionLinking', 'intPoPS.recallLinking', 'intPoPS.precisionLinking'])
+er_curves = expand(os.path.join(RESULTS_DIR, "plots", "enrichmentRecallCurves", "{comparison_name}.values.tsv.gz"), comparison_name=comparisons["name"].unique().to_list())
+scatterplots = expand(os.path.join(RESULTS_DIR, "plots", "thresholdedPerformanceComparison", "{comparison_name}.scatter.pdf"), comparison_name=comparisons["name"].unique().to_list())
+
+rule all:
+	input:
+		configs,
+		heatmaps,
+		er_curves,
+		scatterplots

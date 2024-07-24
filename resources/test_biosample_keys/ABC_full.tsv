@@ -1,0 +1,3 @@
+biosample	predictionFile	tissue
+K562	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/ABC/dnase_h3k27ac_intactHiC/K562/Predictions/EnhancerPredictionsAllPutative.tsv.gz	K562,Blood
+GM12878	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/ABC/dnase_h3k27ac_intactHiC/GM12878/Predictions/EnhancerPredictionsAllPutative.tsv.gz	GM12878,Blood

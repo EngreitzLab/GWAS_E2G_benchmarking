@@ -1,0 +1,3 @@
+biosample	predictionFile	tissue
+K562	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/ENCODE-rE2G/additional_models/Extended/K562/encode_e2g_predictions.tsv.gz	K562,Blood
+GM12878	/oak/stanford/groups/engreitz/Projects/Benchmarking/Revisions/Predictors/ENCODE-rE2G/additional_models/Extended/GM12878/encode_e2g_predictions.tsv.gz	GM12878,Blood

@@ -1,0 +1,48 @@
+
+##  CONFIG
+results: "results/2024_0711_sc_benchmarking_v1"
+methodsTable: "config/config_methods.tsv"
+predictionsTable: "config/config_predictions.tsv" # file paths for predictions; column for biosample and each method
+methods: [scE2G_multiome, scE2G_ATAC, scABC, ABC_distanceToTSS, STARE, SnapATAC, Signac, Cicero, FigR, SCENT, ScenicPlus, DIRECTNET, ArchR]
+comparisonsTable: "config/config_comparisons.tsv" # comparisons to compute and plot; columns: name, biosample[group], trait[group]
+
+# groups of biosamples and traits to combine
+biosampleGroups: # will be computed for any predictors with all biosamples represented (in addition to ALL; must be distinct from biosample names)
+  K562: [K562_Xu, K562_IGVF, K562_Wang]
+  BMMC5: [BMMC5_T, BMMC5_Myeloid, BMMC5_Dendritic, BMMC5_Erythroid, BMMC5_B]
+  PBMC5: [PBMC5_B, PBMC5_DC, PBMC5_Mono, PBMC5_NK, PBMC5_T]
+  T_cells: [BMMC22_CD4_pos_T_activated, BMMC22_CD4_pos_T_naive, BMMC22_CD8_pos_T, BMMC22_CD8_pos_T_naive, PBMC_20_CD4.N1, PBMC_22_CD4.M, PBMC_24_CD8.CM]
+  B_cells: [BMMC22_B1_B, BMMC22_Naive_CD20_pos_B, BMMC22_Transitional_B, PBMC_17_B]
+  NK_cells: [BMMC22_NK, PBMC_25_NK]
+  Monocytes: [BMMC22_CD14_pos_Mono, BMMC22_CD16_pos_Mono, PBMC_11_CD14.Mono.1, PBMC_12_CD14.Mono.2, PBMC_13_CD16.Mono]
+  Dendritic_cells: [BMMC22_cDC2, BMMC22_pDC, PBMC_10_cDC]
+  Pancreatic_islets: [Islets_beta, Islets_alpha, Islets_delta, Islets_PP, Islets_acinar, Islets_duct, Islets_endothelial, Islets_immune, Islets_mesenchymal]
+
+traitGroups: # for benchmarking against groups of traits with potentially shared variants, in addition to ALL; must be distinct from trait names
+  Metabolic_traits: [BFP, BMI, BW, Glucose, HbA1c, Ht, IGF1, T2D, T2D_BMI, WHRadjBMI]
+  Autoimmune_traits: [AID_Combined, Hypothyroidism, Asthma, IBD]
+  RBC_traits: [RBC, MCH, MCHC, MCV, Hb, HbA1c, Ht]
+  WBC_traits: [WBC,Mono,Lym,Eosino,AID_Combined,IBD, CRP]
+  Blood_counts: [RBC, WBC, Mono, Lym, Eosino, Baso, Neutro, Plt]
+
+## REFERENCE / RESOURCES /  PARAMS
+baseDir: "/oak/stanford/groups/engreitz/Users/sheth/GWAS_benchmarking_working/GWAS_E2G_benchmarking"
+scratchDir: "/scratch/users/shethm"
+nThresholdSteps: 25 # for enrichment-recall curves
+thresholdPIP: 0.1
+thresholdPval: 0.05
+numPoPSGenes: 2 # for evaluating gene-linking
+numPredGenes: 2 # for evaluating gene-linking
+plotFixedScale: False # if true, heatmaps will be plotted with the same color scale across all predictors
+
+# Variant files
+variantKey: "resources/UKBB_variant_key.tsv" # columns: trait, variant_file
+genePrioritizationTable: "resources/UKBiobank.ABCGene.anyabc.tsv" # minimal columns: CredibleSet, Disease, TargetGene, truth, POPS.Rank, PromoterDistanceToBestSNP
+bgVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/backgroundSNPs/all.bg.SNPs.hg38.baseline.v1.1.bed.sorted" # 10M common variants
+
+# Genome annotation
+chrSizes: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/resources/genome_annotation/GRCh38_EBV.chrom.sizes.tsv" 
+partition: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/resources/genome_annotation/PartitionCombined.bed" # distal noncoding regions: ABC,AllPeaks,Other,OtherIntron
+TSS: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/resources/genome_annotation/CollapsedGeneBounds.hg38.TSS500bp.bed" # is this ever used?
+genes: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/resources/genome_annotation/CollapsedGeneBounds.hg38.bed"
+
