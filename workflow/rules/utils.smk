@@ -19,18 +19,34 @@ def validate_biosample_groups():
 	key = pl.read_csv(config["predictionsTable"], separator="\t").drop_nulls("biosample")
 	key_biosamples = key["biosample"].to_list()
 
+	for bg in config["biosampleGroups"].items():
+		if bg in key_biosamples:
+			raise Exception(f"Biosample group and biosample {bg} cannot share the same name.")
+
 	for thisGroup, thisBiosamples in config["biosampleGroups"].items():
 		for b in thisBiosamples:
 			if b not in key_biosamples:
 				raise Exception(f"Biosample {b} in group {thisGroup} is not defined in predictions config.")
 
+	for b in comparisons["biosample"].to_list():
+		if (b not in config["biosampleGroups"].keys()) and (b not in key_biosamples) and (b != "ALL"):
+			raise Exception(f"Biosample {b} in comparisons config is not defined.")
+
 def validate_trait_groups():
 	key_traits = variant_key["trait"].to_list()
+
+	for tg in config["traitGroups"].items():
+		if tg in key_traits:
+			raise Exception(f"Trait group and trait {tg} cannot share the same name.")
 
 	for thisGroup, thisTraits in config["traitGroups"].items():
 		for t in thisTraits:
 			if t not in key_traits:
 				raise Exception(f"Trait {t} in group {thisGroup} is not definted in variant key.")
+
+	for t in comparisons["trait"].to_list():
+		if (t not in config["traitGroups"].keys()) and (t not in key_traits) and (t != "ALL"):
+			raise Exception(f"Trait {t} in comparisons config is not defined.")
 
 # add columns to methods config from sample key and config (all lists): biosamples (all individ biosamples for this method), predFiles (corresponding prediction files), biosampleGroups (which groups from config are fully represented)
 def add_biosamples_and_files_to_config_old(methods_config):

@@ -47,7 +47,7 @@ heatmaps = expand(os.path.join(RESULTS_DIR, "plots", "{metric}Heatmaps", "{metho
 	metric=["enrichmentOverlap", 'recallOverlap', 'recallLinking', 'precisionLinking', 'intPoPS.recallLinking', 'intPoPS.precisionLinking'])
 er_curves = expand(os.path.join(RESULTS_DIR, "plots", "enrichmentRecallCurves", "{comparison_name}.values.tsv.gz"), comparison_name=comparisons["name"].unique().to_list())
 scatterplots = expand(os.path.join(RESULTS_DIR, "plots", "thresholdedPerformanceComparison", "{comparison_name}.scatter.pdf"), comparison_name=comparisons["name"].unique().to_list())
-
+print(er_curves)
 rule all:
 	input:
 		configs,

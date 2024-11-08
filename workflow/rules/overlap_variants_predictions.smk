@@ -71,7 +71,7 @@ rule compute_background_variant_overlap_and_enh_set_size:
 # resultant columns with header: (variant 1-6) chr,start,end,rsid,CredibleSet,trait; (prediction 7-12) chr,start,end,biosample,TargetGene,predScore
 rule intersect_variants_thresholded_predictions:
 	input:
-		variantsMerged =  os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
+		variantsMerged =  os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
 		predictionsThresholded = os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.thresholded.bed.gz")
 	params:
 		chrSizes = config["chrSizes"]
@@ -97,7 +97,7 @@ rule intersect_variants_thresholded_predictions:
 # resultant columns with header: (variant 1-6) chr,start,end,rsid,CredibleSet,trait; (prediction 8-10) chr,start,end
 rule intersect_variants_merged_thresholded_predictions:
 	input:
-		variantsMerged = os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
+		variantsMerged = os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
 		predictionsThresholded = os.path.join(SCRATCH_DIR, "{method}", "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.thresholded.merged.bed.gz")
 	params:
 		chrSizes = config["chrSizes"]
@@ -148,7 +148,7 @@ rule intersect_background_variants_full_predictions:
 # resultant columns with header: (variant 1-6) chr,start,end,rsid,CredibleSet,trait; (prediction 7-12) chr,start,end,biosample,TargetGene,predScore
 rule intersect_variants_full_predictions:
 	input:
-		variantsMerged =  os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
+		variantsMerged =  os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
 		predictions = os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz")
 	params:
 		chrSizes = config["chrSizes"]
@@ -176,7 +176,7 @@ rule calculate_thresholded_enrichment_recall:
 		variantsInt = lambda wildcards: expand(os.path.join(SCRATCH_DIR, wildcards.method, "biosamples", "{biosample}", "enhancerPredictions.thresholded.variantIntersection.tsv.gz"), biosample=get_col2_from_col1(methods_config, "method", wildcards.method, "biosamples")),
 		variantsIntGroups = lambda wildcards: expand(os.path.join(SCRATCH_DIR, wildcards.method, "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.thresholded.variantIntersection.tsv.gz"), biosampleGroup=get_col2_from_col1(methods_config, "method", wildcards.method, "biosampleGroups")),
 		thresholdedPredictionStats = os.path.join(RESULTS_DIR, "{method}", "variant_overlap", "bgOverlap.enhancerSetSize.thresholdedPredictions.tsv"),
-		variantsMerged = os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
+		variantsMerged = os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
 		bgVarCount = os.path.join(RESULTS_DIR, "variants", "bgVariants.distalNoncoding.count.txt")
 	params:
 		biosamples = lambda wildcards: get_col2_from_col1(methods_config, "method", wildcards.method, "biosamples"),
@@ -198,7 +198,7 @@ rule calculate_enrichment_recall_curve:
 	input:
 		variantsInt = lambda wildcards: expand(os.path.join(SCRATCH_DIR, wildcards.method, "biosamples", "{biosample_this}", "enhancerPredictions.variantIntersection.tsv.gz"), biosample_this=get_single_biosamples(wildcards.method, wildcards.biosample)),
 		bgVariantsInt = lambda wildcards: expand(os.path.join(SCRATCH_DIR, wildcards.method, "biosamples", "{biosample_this}", "enhancerPredictions.bgVariantIntersection.tsv.gz"), biosample_this=get_single_biosamples(wildcards.method, wildcards.biosample)),
-		variantsMerged = os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
+		variantsMerged = os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"),
 		bgVarCount = os.path.join(RESULTS_DIR, "variants", "bgVariants.distalNoncoding.count.txt"),
 		thresholdSpan = os.path.join(RESULTS_DIR, "{method}", "thresholdSpan.tsv")
 	params:

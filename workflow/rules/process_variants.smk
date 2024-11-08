@@ -62,7 +62,7 @@ rule filter_GWAS_variants:
 		echo -e "chr\tstart\tend\trsid\tCredibleSet\ttrait" > {output.variantsFiltered}
 
 		# rest of file
-		cat {input.variants} | csvtk cut -t -f chr,start,end,rsid,pip,CredibleSet,Disease | sed 1d | awk '$5>{params.thresholdPIP}'  | cut -f1,2,3,4,6,7 | \
+		cat {input.variants} | csvtk cut -t -f chr,start,end,rsid,pip,CredibleSet,trait | sed 1d | awk '$5>{params.thresholdPIP}'  | cut -f1,2,3,4,6,7 | \
 			bedtools sort -i stdin -faidx {params.chrSizes} | bedtools intersect -wa -sorted -a stdin -b {input.partitionDistalNoncoding} -g {params.chrSizes} >> {output.variantsFiltered}
 		"""
 
@@ -119,7 +119,7 @@ rule combine_GWAS_variants:
 		header = temp(os.path.join(SCRATCH_DIR, "variants", "header.tsv")),
 		variantsMerged = temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.tsv")),
 		variantsMergedSorted = temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv")),
-		variantsMergedSortedGz = (os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"))
+		variantsMergedSortedGz = (os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz"))
 	shell:
 		"""
 		set +o pipefail;
