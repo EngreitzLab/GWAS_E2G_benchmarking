@@ -14,6 +14,7 @@ groups = snakemake@params$biosampleGroups %>% strsplit(" ") %>% unlist()
 p_threshold = snakemake@params$thresholdPval %>% as.numeric()
 numPoPSGenes = snakemake@params$numPoPSGenes %>% as.numeric()
 numPredGenes = snakemake@params$numPredGenes %>% as.numeric()
+boolean = (snakemake@params$boolean)
 method_this = snakemake@wildcards$method
 out_file = snakemake@output$res
 
@@ -67,16 +68,22 @@ for (b in 1:length(biosamples_all)){
 
 	for (t in 1:length(traits)){
 		trait_this = traits[t]
-		varInt_trait = dplyr::filter(varInt_biosample, trait==trait_this)
+		varInt_trait = dplyr::filter(varInt_biosample, trait == trait_this)
 		if (nrow(varInt_trait)>0){
-			varInt_trait = varInt_trait %>% left_join(uniq_cs, by=c("CredibleSet", "trait")) # add TruthGene(s)
+			cs_this <- dplyr::filter(uniq_cs, trait == trait_this)
 
 			# without PoPS: filter to top two-scoring genes linked by enhancers per credible set
-			pred_only = arrange(varInt_trait, CredibleSet, -predScore) %>%
+			pred_only = dplyr::filter(varInt_trait, CredibleSet %in% cs_this$CredibleSet) %>%
+				group_by(CredibleSet, TargetGene) %>%
+				summarize(maxPredScore = max(predScore)) %>% # columns = credible set / trait / score
 				group_by(CredibleSet) %>%
-				mutate(predRank = row_number()) %>%
+				arrange(-maxPredScore) %>%
+				#mutate(predRank = row_number()) %>%
+				mutate(predRank = rank(-maxPredScore, ties.method = "min")) %>%
 				ungroup() %>%
-				dplyr::filter(predRank <= numPredGenes)
+				dplyr::filter(predRank <= numPredGenes) %>%
+				left_join(cs_this, by=c("CredibleSet")) # add TruthGene(s)
+			print(pred_only)
 			res_list[[ind]] = get_results_vector(df=pred_only, biosample=biosample_this, group=group_this, trait=trait_this, intersectPoPS=FALSE)
 			ind = ind + 1
 
@@ -90,6 +97,7 @@ for (b in 1:length(biosamples_all)){
 }
 df_res = as_tibble(rbindlist(res_list))
 df_res = left_join(df_res, csPerTrait, by="trait")
+df_res[is.na(df_res)] = 0
 
 df_res$nCredibleSetsTotal = as.integer(df_res$nCredibleSetsTotal)
 df_res$nCredibleSetsOverlappingEnhancers = as.integer(df_res$nCredibleSetsOverlappingEnhancers)
@@ -100,8 +108,10 @@ df_res$nCredibleSetsOverlappingEnhancersCorrectGene = as.integer(df_res$nCredibl
 df_res = mutate(df_res,
 	recall = nCredibleSetsOverlappingEnhancersCorrectGene/nCredibleSetsTotal,
 	precision = nCredibleSetsOverlappingEnhancersCorrectGene/nCredibleSetsOverlappingEnhancersAnyGene)
+df_res[is.na(df_res)] = 0
 df_res = add_recall_linking_statistics(df_res, p_threshold, "enhancers")
 df_res = add_precision_linking_statistics(df_res, p_threshold, "enhancers")
+df_res[is.na(df_res)] = 0
 
 df_res$method = method_this
 

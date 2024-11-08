@@ -116,18 +116,53 @@ summarize_grouped_precision_recall<- function(df, p_threshold, type){
 	return(df)
 }
 
-get_n_equals <- function(df, type){
-	if (type=="variant_overlap"){
-		col_name = "nVariantsTotal"
-	} else if (type=="gene_linking") {
-		col_name = "nCredibleSetsTotal"
-	}
-
+get_min_max_from_column <- function(df, col_name) {
 	n_min = min(df[[col_name]])
 	n_max = max(df[[col_name]])
 	if (n_min==n_max){
-			n_label = paste0("N = ", n_min)
+			n_label = paste0(n_min)
 	} else {
-		n_label = paste0("N = ", n_min, "-", n_max)
+		n_label = paste0( n_min, "-", n_max)
 	}
+
+	return(n_label)
+}
+
+get_n_equals_variant_overlap <- function(df, var, traits, trait_groups) {
+	# var = all variants file
+	
+	traits_to_use <- c()
+	for (i in seq_along(traits)) {
+		this_trait <- traits[i]
+		if (this_trait %in% colnames(trait_groups)){
+			traits_to_use <- c(traits_to_use, trait_groups[[this_trait]])
+		}
+		else {
+			traits_to_use <- c(traits_to_use, this_trait)
+		}
+	}
+	traits_to_use <- traits_to_use[!is.na(traits_to_use)] %>% unique()
+
+	#chr,start,end,rsid,CredibleSet,trait 
+	n_var <- dplyr::filter(var, trait %in% traits_to_use) %>% dplyr::select(chr, start, end) %>% distinct() %>% nrow()
+	n_var_text <- paste0(n_var, " variants from ", length(traits_to_use), " traits")
+
+	print(df)
+	n_pairs <- dplyr::select(df, biosample, trait, nVariantsTotal) %>% distinct()
+	n_pairs_text <-  paste0("(", sum(n_pairs$nVariantsTotal), " variant-biosample pairs)")
+
+	label <- paste0(n_var_text, "\n", n_pairs_text)
+	return(label)
+}
+
+get_n_equals_gene_linking <- function(df){
+	# number of credible sets & traits
+	n_cs <- df %>% dplyr::select(trait, nCredibleSetsTotal) %>% distinct()
+	n_cs_text <- paste0(sum(n_cs$nCredibleSetsTotal), " credible sets from ", length(unique(n_cs$trait)), " traits tested")
+
+	n_pairs <- df %>% dplyr::select(biosample, trait, nCredibleSetsTotal) %>% distinct()
+	n_pairs_text <- paste0("(", sum(n_pairs$nCredibleSetsTotal), " credible set-biosample pairs)")
+
+	label <- paste0(n_cs_text, "\n", n_pairs_text)
+	return(label)
 }

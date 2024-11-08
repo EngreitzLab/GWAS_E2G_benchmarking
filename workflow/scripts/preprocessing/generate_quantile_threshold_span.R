@@ -35,7 +35,8 @@ for (i in 1:length(varInt_files)){
 }
 res = data.frame(rbindlist(res_list)) %>%
 	dplyr::select(varChr, varStart, varEnd, predScore) %>%
-	group_by(-predScore) %>%
+	dplyr::filter(!is.na(predScore), is.finite(predScore)) %>%
+	group_by(-c(predScore)) %>%
 	summarize(predScore = max(predScore)) %>%
 	distinct()
 

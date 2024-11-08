@@ -40,7 +40,7 @@ for (i in 1:nrow(thresholdSpan)){
 	bg_count = dplyr::filter(bgVarInt, predScore>=threshold_this) %>%
 		dplyr::select(-predScore) %>% distinct() %>% nrow()
 
-	res_list[[i]] = dplyr::filter(varInt, predScore>threshold_this) %>% 
+	res_list[[i]] = dplyr::filter(varInt, predScore>=threshold_this) %>% 
 		dplyr::select(-predScore) %>% distinct() %>%
 		group_by(trait) %>% summarize(nVariantsOverlappingEnhancers=n()) %>%
 		mutate(nCommonVariantsOverlappingEnhancers=bg_count, threshold=threshold_this)

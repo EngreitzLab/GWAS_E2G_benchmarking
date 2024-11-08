@@ -7,7 +7,7 @@ import polars as pl
 # resultant columns with header: (variant 1-7) chr,start,end,rsid,pip,CredibleSet,trait; (prediction 8-13) chr,start,end,biosample,TargetGene,score
 rule intersect_variants_concat_predictions_with_gene:
 	input:
-		variantsMerged = ancient(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz")),
+		variantsMerged = ancient(os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz")),
 		predictionsConcatThresholded = os.path.join(SCRATCH_DIR, "{method}", "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.thresholded.concat.bed.gz")
 	params:
 		chrSizes = config["chrSizes"]
@@ -41,6 +41,7 @@ rule evalute_gene_linking:
 		thresholdPval = config["thresholdPval"],
 		numPoPSGenes = config["numPoPSGenes"],
 		numPredGenes = config["numPredGenes"],
+		boolean = lambda wildcards: get_col2_from_col1(methods_config, "method", wildcards.method, "boolean"),
 		helpful_math = os.path.join(SCRIPTS_DIR, "helpful_math.R")
 	output:
 		res = os.path.join(RESULTS_DIR, "{method}", "gene_linking", "precisionRecall.traitByBiosample.tsv.gz")

@@ -74,10 +74,14 @@ rule plot_enrichment_recall_curves:
 		ER = lambda wildcards: flatten([[os.path.join(RESULTS_DIR, method, "variant_overlap", f"enrichmentRecallAcrossThresholds.forBiosample{biosample}.tsv.gz")
 			for biosample in get_biosample_names_per_method(comparisons.filter(pl.col("name")==wildcards.comparison_name), method)]
 			for method in config["methods"]]),
-		colors = os.path.join(RESULTS_DIR, "plots", "colorPalette.tsv"),	
+		colors = os.path.join(RESULTS_DIR, "plots", "colorPalette.tsv"),
+		allVariants = (os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz")),
+		traitGroups = os.path.join(RESULTS_DIR, "reference_configs", "trait_groups.tsv")
 	params:
+		method_names = config["methods"],
 		biosample_names = lambda wildcards: comparisons.filter(pl.col("name")==wildcards.comparison_name)["biosample"].to_list(),
 		trait_names = lambda wildcards: comparisons.filter(pl.col("name")==wildcards.comparison_name)["trait"].to_list(),
+		score_thresholds = [get_col2_from_col1(methods_config, "method", method_name, "threshold") for method_name in config["methods"]],
 		p_threshold = config["thresholdPval"],
 		helpful_math = os.path.join(SCRIPTS_DIR, "helpful_math.R")
 	output:
@@ -99,6 +103,7 @@ rule plot_thresholded_performance_comparison:
 		geneLinking_baseline = os.path.join(RESULTS_DIR, "baseline", "gene_linking", "precisionRecall.byTrait.tsv.gz"),
 		traitGroups = os.path.join(RESULTS_DIR, "reference_configs", "trait_groups.tsv"),
 		biosampleGroups =  os.path.join(RESULTS_DIR, "reference_configs", "biosample_groups.tsv"),
+		allVariants = (os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz")),
 		colors = os.path.join(RESULTS_DIR, "plots", "colorPalette.tsv"),	
 	params:
 		biosample_names = lambda wildcards: comparisons.filter(pl.col("name")==wildcards.comparison_name)["biosample"].to_list(),
