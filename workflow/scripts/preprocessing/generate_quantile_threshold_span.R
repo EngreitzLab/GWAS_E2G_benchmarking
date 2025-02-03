@@ -22,7 +22,7 @@ if (boolean %in% c("TRUE", "True", TRUE)){
   n_steps_target=2
 } else {
   print("non-boolean")
-}
+} 
 
 map = data.frame(biosample=biosamples, trait=traits)
 map = mutate(map, key = paste0(biosample, ".", trait))
