@@ -88,7 +88,7 @@ rule intersect_variants_thresholded_predictions:
 		set +o pipefail;
 
 		echo -e "varChr\tvarStart\tvarEnd\trsid\tCredibleSet\ttrait\tpredChr\tpredStart\tpredEnd\tbiosample\tTargetGene\tpredScore" > {output.header}
-		bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a <(zcat {input.variantsMerged}) -b <(zcat {input.predictionsThresholded}) > {output.variantsInt}
+		bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a <(zcat {input.variantsMerged} | sed 1d) -b <(zcat {input.predictionsThresholded}) > {output.variantsInt}
 
 		cat {output.header} {output.variantsInt} | gzip > {output.variantsIntGz}
 		"""
@@ -114,7 +114,7 @@ rule intersect_variants_merged_thresholded_predictions:
 		set +o pipefail;
 
 		echo -e "varChr\tvarStart\tvarEnd\trsid\tCredibleSet\ttrait\tpredChr\tpredStart\tpredEnd" > {output.header}
-		bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a <(zcat {input.variantsMerged}) -b <(zcat {input.predictionsThresholded}) > {output.variantsInt}
+		bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a <(zcat {input.variantsMerged} | sed 1d) -b <(zcat {input.predictionsThresholded}) > {output.variantsInt}
 
 		cat {output.header} {output.variantsInt} | gzip > {output.variantsIntGz}
 		"""
@@ -165,7 +165,7 @@ rule intersect_variants_full_predictions:
 		set +o pipefail;
 
 		echo -e "varChr\tvarStart\tvarEnd\trsid\tCredibleSet\ttrait\tpredChr\tpredStart\tpredEnd\tbiosample\tTargetGene\tpredScore" > {output.header}
-		bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a <(zcat {input.variantsMerged}) -b <(zcat {input.predictions}) > {output.variantsInt}
+		bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a <(zcat {input.variantsMerged} | sed 1d) -b <(zcat {input.predictions}) > {output.variantsInt}
 
 		cat {output.header} {output.variantsInt} | gzip > {output.variantsIntGz}
 		"""
