@@ -25,7 +25,7 @@ snakemake -j1 --configfile config/config_example.yml --use-conda
 This pipeline requires five configuration files to provide flexibility in evaluating a enhancer predictions from many models in many cell types against GWAS variants in many traits in any desired combination while accounting for redundancy in related cell types and traits. These files are explained below as clearly as possible.
 
 ### Main configuration file
-An example of the main config file is included at `config/config_example.yml`. The following fields are allowed and required unless otherwise noted:
+An example of the main config file is included at `config/config.yml`. The following fields are allowed and required unless otherwise noted:
 - **results:** output directory name
 - **methodsTable:** configuration file with information about enhancer-gene predictions methods (see below for specifications). An example is included at `config/config_methods.tsv`. 
 - **predictionsTable:** configuration file for predictions for each cell type and method. An example is included at `config/config_predictions.tsv`. This is a .tsv file with the column `biosample` (referring to cell types) and additional columns for each predictive method, titled with the identifier in the `methodsTable`. Entries are file paths for non-thresholdded predictions, which must include the following columns: `chr`, `start`,`end`, `TargetGene` (gene symbol), and the designated score column. If predictions by a method do not exist for an included biosample, leave the entry blank.

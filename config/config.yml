@@ -1,10 +1,10 @@
 
 ##  CONFIG
-results: "results/2024_1024_supergroups"
+results: "results/"
 methodsTable: "config/config_methods.tsv"
-predictionsTable: "config/config_predictions_coarse.tsv" # file paths for predictions; column for biosample and each method
+predictionsTable: "config/config_predictions.tsv" # file paths for predictions; column for biosample and each method
 methods: [scE2G_multiome, scE2G_ATAC, scABC, ABC_distanceToTSS, STARE, SnapATAC, Signac, Cicero, FigR, SCENT, ScenicPlus, DIRECTNET, ArchR]
-comparisonsTable: "config/config_comparisons_sg.tsv" # comparisons to compute and plot; columns: name, biosample[group], trait[group]
+comparisonsTable: "config/config_comparisons.tsv" # comparisons to compute and plot; columns: name, biosample[group], trait[group]
 
 # groups of biosamples and traits to combine
 biosampleGroups: # will be computed for any predictors with all biosamples represented (in addition to ALL; must be distinct from biosample names)
@@ -21,12 +21,10 @@ traitGroups: # for benchmarking against groups of traits with potentially shared
   RBC_traits: [MCH, MCHC, MCV, Hb, HbA1c, Ht]
   WBC_traits: [WBC,Mono,Lym,Eosino,AID_Combined, IBD, CRP]
   Blood_count_traits: [RBC, WBC, Mono, Lym, Eosino, Baso, Neutro, Plt]
-  Blood_traits_all: [MCH, MCHC, MCV, Hb, HbA1c, Ht, RBC, WBC, Mono, Lym, Eosino, Baso, Neutro, Plt]
-  Blood_traits_11: [MCH, MCHC, MCV, Hb, HbA1c, RBC, Mono, Lym, Eosino, Neutro, Plt]
 
 ## REFERENCE / RESOURCES /  PARAMS
 baseDir: "/oak/stanford/groups/engreitz/Users/sheth/GWAS_benchmarking_working/GWAS_E2G_benchmarking"
-scratchDir: "/scratch/users/shethm"
+scratchDir: "/scratch/users/shethm/GWAS_E2G_benchmarking"
 nThresholdSteps: 25 # for enrichment-recall curves
 thresholdPIP: 0.1
 thresholdPval: 0.05

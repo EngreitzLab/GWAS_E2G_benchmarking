@@ -1,9 +1,0 @@
-name	biosample	trait
-ENCODE_comparison	K562_Xu	K562_traits
-ENCODE_comparison	GM12878	GM12878_traits
-Blood_11traits	K562_GM12878	Blood_traits_11
-Blood_counts	PBMC5	Blood_count_traits
-Blood_counts	BMMC5	Blood_count_traits
-WBC_comparison	WBCs	WBC_traits
-Blood_all	PBMC5	Blood_traits_all
-Blood_all	BMMC5	Blood_traits_all
