@@ -7,6 +7,7 @@ suppressPackageStartupMessages({
 
 ## files from snakemake
 genePri_file = snakemake@params$genePrioritizationTable
+TSS_file = snakemake@params$TSS
 p_threshold = snakemake@params$thresholdPval %>% as.numeric()
 numPoPSGenes = snakemake@params$numPoPSGenes %>% as.numeric()
 out_file = snakemake@output$res
@@ -28,8 +29,10 @@ get_results_vector  <- function(df, trait_this, method){
 
 #### MAIN 
 
-## read in data
-genePri = fread(genePri_file, sep="\t")
+## read in data; filter prioritizationt able to gene universe
+TSS <- fread(TSS_file, col.names = c("chr", "start", "end", "name", "score", "strand", "Ensembl_ID", "gene_type"))
+genePri = fread(genePri_file, sep="\t") %>%
+	filter(TargetGene %in% TSS$name)
 colnames(genePri)[colnames(genePri)=="Disease"] = "trait" # rename Disease -> trait
 traits = unique(genePri$trait)
 
@@ -40,7 +43,11 @@ uniq_cs = dplyr::select(genePri, CredibleSet, trait, TargetGene, truth) %>% dply
 	mutate(TruthGene = TargetGene) %>%
 	dplyr::select(-c(TargetGene,truth)) # columns: CredibleSet, trait, TruthGene
 
-PoPS_genes = dplyr::select(genePri, CredibleSet, trait, TargetGene, POPS.Rank) %>%
+PoPS_genes = dplyr::select(genePri, CredibleSet, trait, TargetGene, POPS.Score) %>%
+	group_by(CredibleSet, trait) %>% 
+	arrange(desc(POPS.Score)) %>% 
+	mutate(POPS.Rank = row_number()) %>% 
+	ungroup() %>%
 	dplyr::filter(POPS.Rank<=numPoPSGenes) %>%
 	dplyr::select(-c(POPS.Rank)) %>%
 	left_join(uniq_cs, by=c("CredibleSet", "trait")) # columns: CredibleSet, trait, TargetGene, TruthGene

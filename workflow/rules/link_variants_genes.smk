@@ -35,6 +35,7 @@ rule evalute_gene_linking:
 		variantsInt = lambda wildcards: expand(os.path.join(SCRATCH_DIR, wildcards.method, "biosamples", "{biosample}", "enhancerPredictions.variantIntersection.tsv.gz"), biosample=get_col2_from_col1(methods_config, "method", wildcards.method, "biosamples")),
 		variantsIntGroups = lambda wildcards: expand(os.path.join(SCRATCH_DIR, wildcards.method, "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.variantIntersection.withGene.tsv.gz"), biosampleGroup=get_col2_from_col1(methods_config, "method", wildcards.method, "biosampleGroups")),
 	params:
+		TSS = config["TSS"],
 		biosamples = lambda wildcards: get_col2_from_col1(methods_config, "method", wildcards.method, "biosamples"),
 		biosampleGroups = lambda wildcards: get_col2_from_col1(methods_config, "method", wildcards.method, "biosampleGroups"),
 		genePrioritizationTable = config["genePrioritizationTable"], 
@@ -54,6 +55,7 @@ rule evalute_gene_linking:
 
 rule evaluate_baseline_predictors_gene_linking:
 	params:
+		TSS = config["TSS"],
 		genePrioritizationTable = config["genePrioritizationTable"],
 		numPoPSGenes = config["numPoPSGenes"],
 		thresholdPval = config["thresholdPval"],

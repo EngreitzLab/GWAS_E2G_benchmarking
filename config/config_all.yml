@@ -36,12 +36,10 @@ plotFixedScale: False # if true, heatmaps will be plotted with the same color sc
 
 # Variant files
 variantKey: "resources/UKBB_variant_key.tsv" # columns: trait, variant_file
-genePrioritizationTable: "resources/UKBiobank.ABCGene.anyabc.tsv" # minimal columns: CredibleSet, Disease, TargetGene, truth, POPS.Rank, PromoterDistanceToBestSNP
+genePrioritizationTable: "resources/UKBiobank.ABCGene.anyabc.tsv" # minimal columns: CredibleSet, Disease, TargetGene, truth, POPS.Score, PromoterDistanceToBestSNP
 bgVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/backgroundSNPs/all.bg.SNPs.hg38.baseline.v1.1.bed.sorted" # 10M common variants
 
 # Genome annotation
-chrSizes: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/resources/genome_annotation/GRCh38_EBV.chrom.sizes.tsv" 
-partition: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/resources/genome_annotation/PartitionCombined.bed" # distal noncoding regions: ABC,AllPeaks,Other,OtherIntron
-TSS: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/resources/genome_annotation/CollapsedGeneBounds.hg38.TSS500bp.bed" # is this ever used?
-genes: "/oak/stanford/groups/engreitz/Users/sheth/eQTLEnrichment-integrated/eQTLEnrichment/resources/genome_annotation/CollapsedGeneBounds.hg38.bed"
-
+chrSizes: "resources/genome_annotation/GRCh38_main.chrom.sizes.tsv" 
+partition: "resources/genome_annotation/PartitionCombined.bed" # distal noncoding regions: ABC,AllPeaks,Other,OtherIntron
+TSS: "resources/genome_annotation/CollapsedGeneBound.hg38.intGENCODEv43.TSS500bp.bed" 
