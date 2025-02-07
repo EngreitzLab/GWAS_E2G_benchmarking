@@ -6,6 +6,7 @@ suppressPackageStartupMessages({
   source(snakemake@params$helpful_math)})
 
 ## files from snakemake
+TSS_file = snakemake@params$TSS
 varInt_files = snakemake@input$variantsInt %>% strsplit(" ") %>% unlist()
 varIntGroup_files = snakemake@input$variantsIntGroups %>% strsplit(" ") %>% unlist()
 genePri_file = snakemake@params$genePrioritizationTable
@@ -35,6 +36,9 @@ get_results_vector  <- function(df, biosample, group, trait, intersectPoPS){
 #### MAIN 
 
 ## read in data
+TSS <- fread(TSS_file, col.names = c("chr", "start", "end", "name", "score", "strand", "Ensembl_ID", "gene_type"))
+genePri = fread(genePri_file, sep="\t") %>%
+	filter(TargetGene %in% TSS$name)
 genePri = fread(genePri_file, sep="\t")
 colnames(genePri)[colnames(genePri)=="Disease"] = "trait" # rename Disease -> trait
 traits = unique(genePri$trait)
@@ -46,7 +50,12 @@ uniq_cs = dplyr::select(genePri, CredibleSet, trait, TargetGene, truth) %>%
 	dplyr::filter(truth==TRUE) %>%
 	mutate(TruthGene = TargetGene)%>%
 	dplyr::select(-c(TargetGene,truth)) # columns: CredibleSet, trait, TruthGene
-PoPS_genes = dplyr::select(genePri, CredibleSet, trait, TargetGene, POPS.Rank) %>%
+
+PoPS_genes = dplyr::select(genePri, CredibleSet, trait, TargetGene, POPS.Score) %>%
+	group_by(CredibleSet, trait) %>% 
+	arrange(desc(POPS.Score)) %>% 
+	mutate(POPS.Rank = row_number()) %>% 
+	ungroup() %>%
 	dplyr::filter(POPS.Rank<=numPoPSGenes) %>%
 	mutate(PoPSGene = TargetGene) %>%
 	dplyr::select(-c(TargetGene,POPS.Rank)) # columns: CredibleSet, trait, PoPSGene

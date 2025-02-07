@@ -8,7 +8,7 @@ import polars as pl
 rule process_predictions:
 	input:
 		predFile = lambda wildcards: get_pred_file(wildcards.method, wildcards.biosample),
-		geneUniverse = config["genes"]
+		geneUniverse = config["TSS"]
 	params:
 		scriptsDir = SCRIPTS_DIR,
 		chrSizes = config["chrSizes"],

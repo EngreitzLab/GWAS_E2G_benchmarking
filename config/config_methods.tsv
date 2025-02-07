@@ -15,5 +15,5 @@ DIRECTNET	TRUE	FALSE	DIRECTNET (high-confidence)	1	HC_binary	#e0dcca
 ArchR	TRUE	FALSE	ArchR (high-confidence)	1	threshold_binary	#dcbca1
 DNase_ENCODE_rE2G	FALSE	FALSE	ENCODE-rE2G (A=DNase, C=average Hi-C)	0.201	Score	#DC6464
 ENCODE_rE2G_extended	FALSE	FALSE	ENCODE-rE2G_Extended	0.336	ENCODE-rE2G.Score	#9B241C
-DNase_ABC	FALSE	FALSE	ABC (A=DNase,C=avg. Hi-C)	0.018	ABC.Score.Feature	#5496CE
+DNase_ABC	FALSE	FALSE	ABC (A=DNase,C=avg. Hi-C)	0.016	ABC.Score.Feature	#5496CE
 DNase_ABC_distanceToTSS	FALSE	TRUE	In element (ABC (A=DNase)) & distance to TSS	54128	distanceToTSS.Feature	#435369

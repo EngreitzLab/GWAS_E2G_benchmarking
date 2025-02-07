@@ -1,0 +1,5 @@
+name	biosample	trait
+ENCODE_comparison	K562	K562_traits
+ENCODE_comparison	GM12878	GM12878_traits
+matched_blood	Lymphocytes	Lym
+matched_blood	WBCs	WBC

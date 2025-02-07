@@ -1,0 +1,43 @@
+
+##  CONFIG
+results: "results/"
+methodsTable: "config/config_methods.tsv"
+predictionsTable: "config/config_predictions.tsv" # file paths for predictions; column for biosample and each method
+methods: [scE2G_multiome, scE2G_ATAC, scABC, ABC_distanceToTSS, STARE, SnapATAC, Signac, Cicero, FigR, SCENT, ScenicPlus, DIRECTNET, ArchR]
+comparisonsTable: "config/config_comparisons.tsv" # comparisons to compute and plot; columns: name, biosample[group], trait[group]
+
+# groups of biosamples and traits to combine
+biosampleGroups: # will be computed for any predictors with all biosamples represented (in addition to ALL; must be distinct from biosample names)
+   K562_GM12878: [K562_Xu, GM12878]
+   BMMC5: [BMMC5_T, BMMC5_Myeloid, BMMC5_Dendritic, BMMC5_Erythroid, BMMC5_B]
+   PBMC5: [PBMC5_B, PBMC5_DC, PBMC5_Mono, PBMC5_NK, PBMC5_T]
+   Lymphocytes: [PBMC5_T, PBMC5_B, PBMC5_NK, BMMC5_T, BMMC5_B]
+   WBCs: [PBMC5_T, PBMC5_B, PBMC5_NK, PBMC5_Mono, BMMC5_T, BMMC5_B]
+   
+
+traitGroups: # for benchmarking against groups of traits with potentially shared variants, in addition to ALL; must be distinct from trait names
+  K562_traits: [RBC, MCV, HbA1c]
+  GM12878_traits: [Lym, AID_Combined]
+  RBC_traits: [MCH, MCHC, MCV, Hb, HbA1c, Ht]
+  WBC_traits: [WBC,Mono,Lym,Eosino,AID_Combined, IBD, CRP]
+  Blood_count_traits: [RBC, WBC, Mono, Lym, Eosino, Baso, Neutro, Plt]
+
+## REFERENCE / RESOURCES /  PARAMS
+baseDir: "/oak/stanford/groups/engreitz/Users/sheth/GWAS_benchmarking_working/GWAS_E2G_benchmarking"
+scratchDir: "/scratch/users/shethm/GWAS_E2G_benchmarking"
+nThresholdSteps: 25 # for enrichment-recall curves
+thresholdPIP: 0.1
+thresholdPval: 0.05
+numPoPSGenes: 2 # for evaluating gene-linking
+numPredGenes: 2 # for evaluating gene-linking
+plotFixedScale: False # if true, heatmaps will be plotted with the same color scale across all predictors
+
+# Variant files
+variantKey: "resources/UKBB_variant_key.tsv" # columns: trait, variant_file
+genePrioritizationTable: "resources/UKBiobank.ABCGene.anyabc.tsv" # minimal columns: CredibleSet, Disease, TargetGene, truth, POPS.Score, PromoterDistanceToBestSNP
+bgVariants: "/oak/stanford/groups/engreitz/Users/sheth/hg38_resources/backgroundSNPs/all.bg.SNPs.hg38.baseline.v1.1.bed.sorted" # 10M common variants
+
+# Genome annotation
+chrSizes: "resources/genome_annotation/GRCh38_main.chrom.sizes.tsv" 
+partition: "resources/genome_annotation/PartitionCombined.bed" # distal noncoding regions: ABC,AllPeaks,Other,OtherIntron
+TSS: "resources/genome_annotation/CollapsedGeneBound.hg38.intGENCODEv43.TSS500bp.bed" 
