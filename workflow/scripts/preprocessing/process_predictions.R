@@ -23,7 +23,7 @@ main <- function() {
   colnames(df) = c("chr", "start", "end", "TargetGene", "score")
 
   # read ABC data
-  TSS <- fread(TSS_file, col.names = c("chr", "start", "end", "hgnc.ID", "score", "strand", "Ensembl_ID", "gene_type"))
+  TSS <- fread(gene.file, col.names = c("chr", "start", "end", "hgnc.ID", "score", "strand", "Ensembl_ID", "gene_type"))
   genes = read.table(gene.file, sep="\t", header=FALSE, fill=TRUE)
 
   # filter input file to given gene universe
