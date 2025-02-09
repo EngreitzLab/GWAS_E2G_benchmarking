@@ -12,7 +12,7 @@ biosamples = snakemake@params$biosamples %>% as.character() %>% strsplit(" ") %>
 traits = snakemake@params$traits %>% as.character() %>% strsplit(" ") %>% unlist()
 provided_threshold = snakemake@params$threshold %>% as.numeric()
 n_steps_target = snakemake@params$nSteps %>% as.numeric()
-comparisons = snakemake@params$comparisonTable
+comparisons = snakemake@params$comparisonsTable
 boolean = snakemake@params$boolean
 out_file = snakemake@output$thresholdSpan
 
