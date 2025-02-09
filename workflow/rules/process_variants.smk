@@ -21,8 +21,8 @@ rule filter_sort_background_variants:
 		"""
 		set +o pipefail;
 		
-		# filter partition to distal noncoding
-		awk '$4=="ABC" || $4=="AllPeaks" || $4=="Other" || $4=="OtherIntron"' {input.partition} | bedtools sort -i stdin -faidx {params.chrSizes} > {output.partitionDistalNoncoding}
+		# filter partition to chromsome ref and distal noncoding
+		awk 'NR==FNR {{keep[$1]; next}} $1 in keep' {params.chrSizes} {input.partition} | awk '$4=="ABC" || $4=="AllPeaks" || $4=="Other" || $4=="OtherIntron"' | bedtools sort -i stdin -faidx {params.chrSizes} > {output.partitionDistalNoncoding}
 
 		# filter bg variants to distal noncoding
 		cat {input.bgVariants} | bedtools sort -i stdin -faidx {params.chrSizes} | bedtools intersect -wa -sorted -a stdin -b {output.partitionDistalNoncoding} -g {params.chrSizes} | gzip > {output.bgVarDistalNoncoding}
