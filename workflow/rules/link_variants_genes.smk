@@ -24,7 +24,7 @@ rule intersect_variants_concat_predictions_with_gene:
 		set +o pipefail;
 
 		echo -e "varChr\tvarStart\tvarEnd\trsid\tCredibleSet\ttrait\tpredChr\tpredStart\tpredEnd\tbiosample\tTargetGene\tpredScore" > {output.header}
-		bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a <(zcat {input.variantsMerged}) -b <(zcat {input.predictionsConcatThresholded}) > {output.variantsInt}
+		bedtools intersect -wa -wb -sorted -g {params.chrSizes} -a <(zcat {input.variantsMerged} | sed 1d) -b <(zcat {input.predictionsConcatThresholded}) > {output.variantsInt}
 
 		cat {output.header} {output.variantsInt} | gzip > {output.variantsIntGz}
 		"""
