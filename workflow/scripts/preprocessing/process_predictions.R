@@ -24,10 +24,10 @@ main <- function() {
 
   # read ABC data
   TSS <- fread(gene.file, col.names = c("chr", "start", "end", "hgnc.ID", "score", "strand", "Ensembl_ID", "gene_type"))
-  genes = read.table(gene.file, sep="\t", header=FALSE, fill=TRUE)
+  #genes = read.table(gene.file, sep="\t", header=FALSE, fill=TRUE)
 
   # filter input file to given gene universe
-  df = dplyr::filter(df, TargetGene %in% genes$hgnc.ID)
+  df = dplyr::filter(df, TargetGene %in% TSS$hgnc.ID)
   
   # invert score if necessary
   if (invert %in% c("True", "TRUE")){

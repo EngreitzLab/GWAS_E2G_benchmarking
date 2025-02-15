@@ -15,7 +15,7 @@ rule process_predictions:
 		scoreCol = lambda wildcards: get_col2_from_col1(methods_config, "method", wildcards.method, "score_col"),
 		inversePred = lambda wildcards: get_col2_from_col1(methods_config, "method", wildcards.method, "inverse_predictor"),
 	output:
-		predictionsTemp = temp(os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.temp.tsv")),
+		predictionsTemp = (os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.temp.tsv")),
 		predictionsSorted = (os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz"))
 	resources:
 		mem_mb = determine_mem_mb
@@ -24,7 +24,6 @@ rule process_predictions:
 	shell:
 		"""			
 		# sort predictions file: remove # from header,select columns,remove header, remove rows with blanks
-		set +o pipefail;
 		if [[ {input.predFile} == *.gz ]]
 		then
 			zcat {input.predFile} | awk 'NR==1{{sub(/^#*/, "")}}1' | csvtk cut -t -f chr,start,end,TargetGene,{params.scoreCol} | sed 1d | awk 'NF==5{{print}}{{}}' | bedtools sort -i stdin -faidx {params.chrSizes} > {output.predictionsTemp}
@@ -33,7 +32,8 @@ rule process_predictions:
 		fi
 
 		# invert score if inverted predictor and filter to gene universe and set biosample column as 4th 
-		Rscript {params.scriptsDir}/preprocessing/process_predictions.R --input {output.predictionsTemp}  --genes {input.geneUniverse} --biosample {wildcards.biosample} --invert {params.inversePred}  | gzip > {output.predictionsSorted}
+		Rscript {params.scriptsDir}/preprocessing/process_predictions.R --input {output.predictionsTemp}  --genes {input.geneUniverse} --biosample {wildcards.biosample} --invert {params.inversePred}  | \
+			gzip > {output.predictionsSorted}
 			
 		"""
 
