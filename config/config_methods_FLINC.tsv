@@ -1,0 +1,2 @@
+method	boolean	inverse_predictor	pred_name_long	threshold	score_col	color
+scE2G_multiome	FALSE	FALSE	scE2G (Multiome)	0.164	E2G.Score.qnorm	#792374

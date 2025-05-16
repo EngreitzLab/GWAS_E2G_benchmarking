@@ -1,0 +1,13 @@
+biosample	scE2G_multiome
+Cholangiocytes	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/Cholangiocytes/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+B_cells	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/B_cells/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+CD4+_KLRB1_T_cells	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/CD4+_KLRB1_T_cells/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+Circulating_NK	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/Circulating_NK/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+Cytotoxic_CD8+	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/Cytotoxic_CD8+/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+LSECs	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/LSECs/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+Portal_Vein_Endothelial_cells	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/Portal_Vein_Endothelial_cells/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+resKCs	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/resKCs/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+Stellate_cells	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/Stellate_cells/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+Tissue_Resident_NK	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/Tissue_Resident_NK/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+VSMCs	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/VSMCs/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
+Hepatocytes	/projects/hh_liver_cohorts-AUDIT/people/wkq953/scE2G/sc-E2G/results/all_celltype/Hepatocytes_sub/multiome_powerlaw_v2/encode_e2g_predictions.tsv.gz
