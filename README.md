@@ -75,3 +75,18 @@ The following columns describing each enhancer-gene prediction method are requir
 - **color:** hex code specifying what color to use in plots for this method. May be left blank and will be automatically filled.
 - **inverse_predictor:** `TRUE` if high scores correspond to lower prediction confidence (*e.g.* distance to TSS), otherwise `FALSE`
 - **boolean:** `TRUE` if this is a binary 0 or 1 predictor, otherwise `FALSE`
+
+<hr>
+
+### License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Citation
+
+If you use this pipeline in your research, please cite our preprint:
+[bioRxiv preprint](https://www.biorxiv.org/content/10.1101/2024.11.23.624931v1)
+
+### Support
+
+For questions and issues, please use the [GitHub Issues](https://github.com/EngreitzLab/GWAS_E2G_benchmarking/issues) page.
