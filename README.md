@@ -9,6 +9,23 @@ This pipeline performs two analyses to benchmark enhancer-gene predictions again
 1. **Variant enrichment and recall:** How many fine-mapped GWAS variants for a given trait overlap predicted enhancers in a given cell type? How enriched are the GWAS variants compared to 1000G SNPs? Predictions are evaluated in both threshold-dependent and -independent analyses. 
 2. **Linking variants to causal genes:** What are the precision and recall of enhancer-gene predictions in a given cell type at identifying causal genes for credible sets for a given trait? This analysis uses a silver-standard set of noncoding credible set–causal gene links (inferred using independent coding variants as described in [Weeks et al., 2023](https://doi.org/10.1038/s41588-023-01443-6)). Predictions are evaluted independently and in conjunction with the orthogonal Polygenic Priority Score (PoPS).
 
+<hr>
+
+## System requirements
+
+### Hardware requirements
+
+For optimal performance, we suggest using a computer equipped with 32+ GB RAM to run this pipeline.
+
+### Software requirements
+
+This pipeline has been successfully tested with Linux systems.
+
+The software dependencies and versions to run the pipeline are: `python<=3.11`, `mamba=1.5.11`, `snakemake=7`, `polars>1.0`
+All software dependencies and versions used within the pipeline are listed in `workflow/envs/GWAS_env.yml`. 
+
+<hr>
+
 ## Running the pipeline
 1. Clone this repository
 ```
@@ -20,6 +37,8 @@ git@github.com:EngreitzLab/GWAS_E2G_benchmarking.git
 ```
 snakemake -j1 --configfile config/config_example.yml --use-conda
 ```
+
+<hr>
 
 ## Configuration files
 This pipeline requires five configuration files to provide flexibility in evaluating a enhancer predictions from many models in many cell types against GWAS variants in many traits in any desired combination while accounting for redundancy in related cell types and traits. These files are explained below as clearly as possible.
