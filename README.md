@@ -6,8 +6,8 @@ Code adapted from the following pipelines:
 - [eQTLEnrichment](https://github.com/EngreitzLab/eQTLEnrichment/tree/integrated)
 
 This pipeline performs two analyses to benchmark enhancer-gene predictions against noncoding fine-mapped GWAS variants:
-1. **Variant enrichment and recall:** How many fine-mapped GWAS variants for a given trait overlap predicted enhancers in a given cell type? How enriched are the GWAS variants compared to 1000G SNPs? Predictions are evaluated in both threshold-dependent and -independent analyses. 
-2. **Linking variants to causal genes:** What are the precision and recall of enhancer-gene predictions in a given cell type at identifying causal genes for credible sets for a given trait? This analysis uses a silver-standard set of noncoding credible set–causal gene links (inferred using independent coding variants as described in [Weeks et al., 2023](https://doi.org/10.1038/s41588-023-01443-6)). Predictions are evaluted independently and in conjunction with the orthogonal Polygenic Priority Score (PoPS).
+1. **Variant enrichment and recall:** How many fine-mapped GWAS variants for a given trait overlap predicted enhancers in a given cell type? How enriched are the GWAS variants compared to 1000G SNPs? Predictions are evaluated in both threshold-dependent and -independent analyses. Key outputs for this analysis include: `{results}/plots/enrichmentRecallCurves`, `{results}/plots/enrichmentOverlapHeatmaps`, `{results}/plots/recallOverlapHeatmaps`, `{results}/plots/thresholdedPerformanceComparison`.
+2. **Linking variants to causal genes:** What are the precision and recall of enhancer-gene predictions in a given cell type at identifying causal genes for credible sets for a given trait? This analysis uses a silver-standard set of noncoding credible set–causal gene links (inferred using independent coding variants as described in [Weeks et al., 2023](https://doi.org/10.1038/s41588-023-01443-6)). Predictions are evaluted independently and in conjunction with the orthogonal Polygenic Priority Score (PoPS). Key outputs for this analysis include: `{results}/plots/precisionLinkingHeatmaps`, `{results}/plots/intPoPS.precisionLinkingHeatmaps`, `{results}/plots/recallLinkingHeatmaps`, `{results}/plots/intPoPS.recallLinkingHeatmaps`, `{results}/plots/thresholdedPerformanceComparison`.
 
 <hr>
 
@@ -34,7 +34,7 @@ git@github.com:EngreitzLab/GWAS_E2G_benchmarking.git
 ```
 2. Edit configuration files, including downloading necessary reference files (see below)
 3. Activate a conda environment with [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html), [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html), and [polars](https://docs.pola.rs/) installed.
-4. Run the pipeline
+4. Run the pipeline as follows. Depending on the number of predictors, cell types and traits being benchmarked, the workflow should complete in 2–6 hours.
 ```
 snakemake -j1 --configfile config/config_example.yml --use-conda
 ```
