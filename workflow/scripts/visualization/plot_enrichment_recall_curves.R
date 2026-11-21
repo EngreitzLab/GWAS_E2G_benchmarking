@@ -41,7 +41,7 @@ plot_single_panel <- function(df, key_this, pred_colors, all_var, trait_names, t
 		n_label = get_n_equals_variant_overlap(df, all_var, trait_names, trait_groups) 
 	}
 	
-	x_label = paste0("Recall (fraction of variants in predicted enhancers)\n", n_label)
+	x_label = paste0("Recall (Fraction of variants in predicted enhancers)\n", n_label)
 
 	# axis limits
 	max_recall =  ifelse(max(df$recall, na.rm=TRUE)<=0, 1, max(df$recall, na.rm=TRUE))
@@ -63,7 +63,7 @@ plot_single_panel <- function(df, key_this, pred_colors, all_var, trait_names, t
 		geom_point(data=df_thresh, aes(x=recall, y=enrichment, color=pred_name_long), size=3) +
 		geom_linerange(data=df_thresh, aes(ymin=CI_enr_low, ymax=CI_enr_high)) +
 		scale_color_manual(values=pred_colors) +
-		ylab("Enrichment (GWAS variants vs. common variants)") + xlab(x_label) +
+		ylab("Enrichment (GWAS variants versus common variants)") + xlab(x_label) +
 		labs(col="Predictor") +
 		xlim(c(0, max_recall)) + ylim(c(0, max_enr)) +
 		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 8), plot.title=element_text(size=10),
@@ -85,6 +85,7 @@ trait_names = snakemake@params$trait_names %>% strsplit(" ") %>% unlist()
 p_threshold = snakemake@params$p_threshold %>% as.numeric()
 comparison = snakemake@wildcards$comparison_name
 out_combined = snakemake@output$out_combined
+out_combined_rds = snakemake@output$out_combined_rds
 out_singles = snakemake@output$out_singles
 out_table = snakemake@output$out_table
 
@@ -126,6 +127,7 @@ a = plot_single_panel(df = df_agg, key_this = "all_matched.all_matched", pred_co
 	trait_groups = trait_groups, df_sep = df_sep)
 legend_v = as_grob(cowplot::get_plot_component(a, "guide-box-right"))
 ggsave(out_combined, a, width=6, height=4)
+saveRDS(a, out_combined_rds)
 
 # individual plots
 plot_list = vector("list", nrow(map))

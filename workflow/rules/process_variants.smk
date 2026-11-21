@@ -53,6 +53,7 @@ rule filter_GWAS_variants:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "variants"
 	output:
 		variantsFiltered = os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "{trait}.variantList.tsv")
 	shell:
@@ -76,6 +77,7 @@ rule merge_GWAS_variants_trait_group:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "variants"
 	output:
 		variantsTraitGroupConcat =temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "traitGroups", "{traitGroup}.variantList.concat.tsv")),
 		variantsTraitGroup = os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants", "traitGroups", "{traitGroup}.variantList.tsv")
@@ -115,6 +117,7 @@ rule combine_GWAS_variants:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "variants"
 	output:
 		header = temp(os.path.join(SCRATCH_DIR, "variants", "header.tsv")),
 		variantsMerged = temp(os.path.join(SCRATCH_DIR, "variants", "filteredGWASVariants.merged.tsv")),

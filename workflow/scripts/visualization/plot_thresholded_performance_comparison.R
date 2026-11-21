@@ -54,7 +54,7 @@ plot_variant_overlap <- function(df, p_threshold, pred_colors, out_table, all_va
 	# get N = for label
 	traits <- unique(df_input$trait)
 	n_label = get_n_equals_variant_overlap(df_input, all_var, traits, trait_groups)
-	x_label = paste0("Recall (fraction of variants in predicted enhancers) \n", n_label)
+	x_label = paste0("Recall (Fraction of variants in predicted enhancers) \n", n_label)
 
 	# find max for y axis
 	enr_sort <- sort(c(df$CI_enr_high, df$enrichment), decreasing = TRUE)
@@ -74,7 +74,7 @@ plot_variant_overlap <- function(df, p_threshold, pred_colors, out_table, all_va
 		geom_linerange(aes(ymin=CI_enr_low, ymax=CI_enr_high)) +
 		geom_point(shape = 16, size = 4) +
 		scale_color_manual(values=pred_colors, name="Predictor") +
-		labs(x=x_label, y="Enrichment\n(GWAS variants vs. common variants)") +
+		labs(x=x_label, y="Enrichment\n(GWAS variants versus common variants)") +
 		xlim(c(0, max(df$CI_recall_high))) + ylim(c(0, enr_max)) +
 		ggtitle(label="Variant overlap") +
 		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size = 7), plot.title=element_text(size=10),
@@ -119,18 +119,18 @@ plot_gene_linking_one_set<- function(df_enhancers, df_baseline, withPoPS, p_thre
 
 	# get N = for label #n_label = get_n_equals(df, "gene_linking")
 	n_label <- get_n_equals_gene_linking(df_input)
-	x_label = paste0("Recall (fraction of credible sets linked to target gene)\n", n_label)
+	x_label = paste0("Recall (Fraction of credible sets linked to target gene)\n", n_label)
 	plot_title = ifelse(withPoPS, "Linking variants to known genes\n(E2G method int. PoPS)", "Linking variants to known genes\n(E2G method)")
 
 	# plot!
 
 	prec_rec = ggplot(df, aes(x=recall, y=precision, color=pred_name_long)) +
-		geom_point(data = df_other, alpha = 0.25, shape = 16, size = 4) +
-		geom_point(shape = 16, size = 4) + 
 		geom_linerange(aes(xmin=CI_recall_low, xmax=CI_recall_high)) +
 		geom_linerange(aes(ymin=CI_precision_low, ymax=CI_precision_high)) +
+		geom_point(data = df_other, alpha = 0.25, shape = 16, size = 4) +
+		geom_point(shape = 16, size = 4) + 
 		scale_color_manual(values=pred_colors, name="Predictor") +
-		labs(x=x_label, y="Precision (fraction of correct\npredicted credible set-gene links)") +
+		labs(x=x_label, y="Precision (Fraction of correct\npredicted credible set-gene links)") +
 		xlim(c(0, x_max)) + ylim(c(0, y_max)) +
 		ggtitle(label=plot_title) +
 		theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size=7),
@@ -158,6 +158,7 @@ p_threshold = snakemake@params$p_threshold %>% as.numeric()
 out_plots = snakemake@output$plots
 out_overlap =snakemake@output$table_overlap
 out_linking = snakemake@output$table_linking
+enr_recall_curve = readRDS(snakemake@input$enrRecall)
 
 ## read in data
 map = data.frame(biosample = biosample_names, trait = trait_names)
@@ -190,6 +191,11 @@ legend_v = as_grob(cowplot::get_plot_component(with_PoPS, "guide-box-right"))
 with_PoPS <- with_PoPS + theme(legend.position = "None")
 
 ## assemble panels
+overlap <- enr_recall_curve +
+	ggtitle(label="Variant overlap") +
+	theme_classic() + theme(axis.text = element_text(size = 7), axis.title = element_text(size=7),
+			plot.title=element_text(size=10), legend.position = "none", aspect.ratio = 1)
+
 grid = cowplot::plot_grid(overlap, linking, with_PoPS, nrow=1, ncol=3, align = "h", axis="tb", rel_widths=c(1,1,1))
 grid_l = plot_grid(grid, legend_v, nrow=1, ncol = 2, rel_widths=c(9,2))
 ggsave(out_plots, grid_l, width=10, height=3)

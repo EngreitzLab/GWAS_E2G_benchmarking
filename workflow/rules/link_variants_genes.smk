@@ -17,6 +17,7 @@ rule intersect_variants_concat_predictions_with_gene:
 		variantsIntGz = os.path.join(SCRATCH_DIR, "{method}", "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.variantIntersection.withGene.tsv.gz")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "intersect"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	shell:

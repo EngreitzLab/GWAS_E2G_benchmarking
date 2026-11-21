@@ -145,7 +145,7 @@ get_n_equals_variant_overlap <- function(df, var, traits, trait_groups) {
 
 	#chr,start,end,rsid,CredibleSet,trait 
 	n_var <- dplyr::filter(var, trait %in% traits_to_use) %>% dplyr::select(chr, start, end) %>% distinct() %>% nrow()
-	n_var_text <- paste0(n_var, " variants from ", length(traits_to_use), " traits")
+	n_var_text <- paste0(n_var, " variants from ", length(traits_to_use)-1, " traits")
 
 	print(df)
 	n_pairs <- dplyr::select(df, biosample, trait, nVariantsTotal) %>% distinct()

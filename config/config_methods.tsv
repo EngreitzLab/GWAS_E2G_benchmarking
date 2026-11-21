@@ -1,8 +1,8 @@
 method	boolean	inverse_predictor	pred_name_long	threshold	score_col	color
-scE2G_multiome	FALSE	FALSE	scE2G (Multiome)	0.164	E2G.Score.qnorm	#792374
-scE2G_ATAC	FALSE	FALSE	scE2G (scATAC)	0.183	E2G.Score.qnorm	#006479
+scE2G_multiome	FALSE	FALSE	scE2G (Multiome)	0.177	E2G.Score.qnorm	#792374
+scE2G_ATAC	FALSE	FALSE	scE2G (scATAC)	0.174	E2G.Score.qnorm	#006479
 scABC	FALSE	FALSE	ABC (A=scATAC, C=power law)	0.015	ABC.Score	#0096a0
-Kendall	FALSE	FALSE	Kendall correlation (access. at E x expr. at G)	0.011	Kendall	#d3a9ce
+Kendall	FALSE	FALSE	Kendall correlation (access. at E x expr. at G)	0.013	Kendall	#d3a9ce
 ABC_distanceToTSS	FALSE	TRUE	In element (ABC) & distance to TSS	54128	distance	#96a0b3
 STARE	FALSE	FALSE	STARE (gABC, power law)	0.004	ABC.Score	#96ced3
 SnapATAC	FALSE	TRUE	SnapATAC (p-value)	0.00000005	p	#5e5948

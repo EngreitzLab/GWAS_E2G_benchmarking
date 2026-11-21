@@ -19,6 +19,7 @@ rule process_predictions:
 		predictionsSorted = (os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.sorted.bed.gz"))
 	resources:
 		mem_mb = determine_mem_mb
+	group: "predictions"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	shell:
@@ -47,6 +48,7 @@ rule threshold_predictions:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "predictions"
 	output:
 		predictionsThresholded = os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.thresholded.bed.gz")
 	shell:
@@ -66,6 +68,7 @@ rule concatenate_thresholded_predictions:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "predictions"
 	output:
 		predictionsConcat = temp(os.path.join(SCRATCH_DIR, "{method}", "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.thresholded.concat.bed")),
 		predictionsConcatGz = os.path.join(SCRATCH_DIR, "{method}", "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.thresholded.concat.bed.gz")
@@ -96,6 +99,7 @@ rule merge_thresholded_predictions:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "predictions"
 	output:
 		predictionsMerged = os.path.join(SCRATCH_DIR, "{method}", "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.thresholded.merged.bed.gz")
 	shell:

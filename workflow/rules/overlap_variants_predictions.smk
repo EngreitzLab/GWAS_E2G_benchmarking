@@ -18,6 +18,7 @@ rule compute_background_variant_overlap_and_enh_set_size:
 		thresholdedPredictionStats = os.path.join(RESULTS_DIR, "{method}", "variant_overlap", "bgOverlap.enhancerSetSize.thresholdedPredictions.tsv")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "intersect"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	shell:
@@ -81,6 +82,7 @@ rule intersect_variants_thresholded_predictions:
 		variantsIntGz = os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.thresholded.variantIntersection.tsv.gz")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "intersect"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	shell:
@@ -107,6 +109,7 @@ rule intersect_variants_merged_thresholded_predictions:
 		variantsIntGz = os.path.join(SCRATCH_DIR, "{method}", "biosampleGroups", "{biosampleGroup}", "enhancerPredictions.thresholded.variantIntersection.tsv.gz")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "intersect"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	shell:
@@ -132,6 +135,7 @@ rule intersect_background_variants_full_predictions:
 		bgVarPredIntGz = os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.bgVariantIntersection.tsv.gz")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "intersect"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	shell:
@@ -158,6 +162,7 @@ rule intersect_variants_full_predictions:
 		variantsIntGz = os.path.join(SCRATCH_DIR, "{method}", "biosamples", "{biosample}", "enhancerPredictions.variantIntersection.tsv.gz")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "intersect"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	shell:
@@ -188,6 +193,7 @@ rule calculate_thresholded_enrichment_recall:
 		res = os.path.join(RESULTS_DIR, "{method}", "variant_overlap", "enrichmentRecall.thresholded.traitByBiosample.tsv.gz")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "variant_overlap"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	script:
@@ -210,6 +216,7 @@ rule calculate_enrichment_recall_curve:
 		res = os.path.join(RESULTS_DIR, "{method}", "variant_overlap", "enrichmentRecallAcrossThresholds.forBiosample{biosample}.tsv.gz")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "variant_overlap"
 	conda: 
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	script:

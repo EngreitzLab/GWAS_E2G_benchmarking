@@ -42,6 +42,7 @@ rule plot_variant_overlap_heatmaps:
 		outFile_recall = os.path.join(RESULTS_DIR, "plots", "recallOverlapHeatmaps", "{method}.recallOverlapHeatmap.withMetrics.pdf")
 	resources:
 		mem_mb = determine_mem_mb
+	group: "heatmaps"
 	conda:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	script:
@@ -62,6 +63,7 @@ rule plot_gene_linking_heatmaps:
 		outFile_recall_PoPS = os.path.join(RESULTS_DIR, "plots", "intPoPS.recallLinkingHeatmaps", "{method}.intPoPS.recallLinkingHeatmap.withMetrics.pdf"),
 	resources:
 		mem_mb = determine_mem_mb
+	group: "heatmaps"
 	conda:
 		os.path.join(ENV_DIR, "GWAS_env.yml")
 	script:
@@ -86,6 +88,7 @@ rule plot_enrichment_recall_curves:
 		helpful_math = os.path.join(SCRIPTS_DIR, "helpful_math.R")
 	output:
 		out_combined = os.path.join(RESULTS_DIR, "plots", "enrichmentRecallCurves", "{comparison_name}.combinedCurves.pdf"),
+		out_combined_rds = temp(os.path.join(RESULTS_DIR, "plots", "enrichmentRecallCurves", "{comparison_name}.combinedCurves.rds")),
 		out_singles = os.path.join(RESULTS_DIR, "plots", "enrichmentRecallCurves", "{comparison_name}.individualCurves.pdf"),
 		out_table = os.path.join(RESULTS_DIR, "plots", "enrichmentRecallCurves", "{comparison_name}.values.tsv.gz")
 	resources:
@@ -101,6 +104,7 @@ rule plot_thresholded_performance_comparison:
 		variantOverlap = expand(os.path.join(RESULTS_DIR, "{method}", "variant_overlap", "enrichmentRecall.thresholded.traitByBiosample.tsv.gz"), method=config["methods"]),
 		geneLinking = expand(os.path.join(RESULTS_DIR, "{method}", "gene_linking", "precisionRecall.traitByBiosample.tsv.gz"), method=config["methods"]),
 		geneLinking_baseline = os.path.join(RESULTS_DIR, "baseline", "gene_linking", "precisionRecall.byTrait.tsv.gz"),
+		enrRecall = os.path.join(RESULTS_DIR, "plots", "enrichmentRecallCurves", "{comparison_name}.combinedCurves.rds"),
 		traitGroups = os.path.join(RESULTS_DIR, "reference_configs", "trait_groups.tsv"),
 		biosampleGroups =  os.path.join(RESULTS_DIR, "reference_configs", "biosample_groups.tsv"),
 		allVariants = (os.path.join(RESULTS_DIR, "variants", "filteredGWASVariants.merged.sorted.tsv.gz")),

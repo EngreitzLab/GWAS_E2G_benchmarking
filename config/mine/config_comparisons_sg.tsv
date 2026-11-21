@@ -1,0 +1,6 @@
+name	biosample	trait
+K562_GM12878_ovl	K562	K562_traits
+K562_GM12878_ovl	GM12878	GM12878_traits
+K562_GM12878_linking	K562_GM12878	Blood_traits_all
+Blood_all	PBMC5	Blood_traits_all
+Blood_all	BMMC5	Blood_traits_all

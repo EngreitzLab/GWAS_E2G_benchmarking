@@ -1,0 +1,10 @@
+name	biosample	trait
+Blood_matched	T_cells	Lym
+Blood_matched	B_cells	Lym
+Blood_matched	NK_cells	Lym
+Blood_matched	T_cells	WBC
+Blood_matched	B_cells	WBC
+Blood_matched	NK_cells	WBC
+Blood_matched	Monocytes	WBC
+Blood_matched	Monocytes	Mono
+Blood_matched	Erythroid_cells	RBC_traits
